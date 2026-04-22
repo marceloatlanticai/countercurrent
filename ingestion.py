@@ -503,51 +503,49 @@ class IngestionOrchestrator:
 if __name__ == "__main__":
     orchestrator = IngestionOrchestrator(output_path="data/signals.jsonl")
 
+    # TESTE FOCADO: NEW YORK LIBERTY & WNBA CULTURE
     orchestrator.run(
-
-        # RSS — gratuito, sem Apify, roda primeiro
+        # RSS — Buscando nas fontes de cultura e tendências
         rss_config={
             "max_items_per_feed": 5,
-            # usa DEFAULT_RSS_FEEDS automaticamente
-            # para customizar: feeds=[("https://...", "Nome"), ...]
         },
 
-        # REDDIT — API oficial gratuita, sem Apify
+        # REDDIT — Onde a conversa real acontece
         reddit_config={
             "subreddits": [
-                "advertising", "marketing",
-                "GenZ", "branding", "futurology",
+                "NYLiberty", "wnba", "womenssports", "sportsmarketing"
             ],
             "search_terms": [
-                "brand culture", "creator economy",
-                "cultural marketing", "brand authenticity",
+                "Liberty Loud", "fan experience", "stadium style", 
+                "Ellie the Elephant", "WNBA fashion"
             ],
+            "max_items": 20,
+        },
+
+        # WEB — Sites de tendências e notícias esportivas
+        web_config={
+            "start_urls": [
+                "https://www.si.com/wnba/team/new-york-liberty",
+                "https://liberty.wnba.com/news/",
+            ],
+            "max_pages_per_url": 3,
+        },
+
+        # TIKTOK — Fundamental para ver o "Tunnel Fashion" e a cultura visual
+        tiktok_config={
+            "hashtags": ["#nyliberty", "#wnba", "#wnbafashion", "#ellietheelephant"],
             "max_items": 15,
         },
 
-        # WEB — Apify (usa compute units do free plan)
-        web_config={
-            "start_urls": [
-                "https://www.trendwatching.com",
-                "https://www.contagious.com/news-and-views",
+        # YOUTUBE — Para captar análises e vlogs de torcedores
+        youtube_config={
+            "search_terms": [
+                "New York Liberty fan culture",
+                "WNBA marketing trends 2026",
+                "New York Liberty tunnel walk"
             ],
-            "max_pages_per_url": 2,
-        },
-
-        # TIKTOK — Apify pay-per-result (~$0.07 para 15 itens)
-        tiktok_config={
-            "hashtags": ["#brandtok", "#marketingtok", "#adtok"],
             "max_items": 10,
         },
 
-        # YOUTUBE — Apify gratuito
-        youtube_config={
-            "search_terms": [
-                "brand strategy 2025",
-                "cultural marketing trends",
-            ],
-            "max_items": 8,
-        },
-
-        client_tag="Atlantic_General",
+        client_tag="NY_Liberty_Pinterest", # Tag específica para o projeto
     )
