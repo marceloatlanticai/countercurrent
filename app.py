@@ -1,5 +1,6 @@
 """
-Countercurrent.ai — Layer 3 (v2.1): The Wire Room - Mixed Feed Edition
+Countercurrent.ai — Layer 3 (v2.2): The Wire Room 
+Updated: Gemini 2.5 Flash + Mixed Feed + Dual Intelligence Layer
 """
 
 import os
@@ -88,6 +89,7 @@ html, body, [class*="css"] {
 .badge-pdf      { background: #1a0f1a; color: #c44aff; border: 1px solid #2a1a2a; }
 .badge-youtube   { background: #1a0a0a; color: #ff4444; border: 1px solid #2a1a1a; }
 .badge-rss       { background: #1a1200; color: #ffaa00; border: 1px solid #2a2000; }
+.badge-discord   { background: #0f1a2a; color: #5865f2; border: 1px solid #1a2a3a; }
 
 /* AUTO CURRENT BOX (Right Side Top) */
 .auto-current-box {
@@ -118,41 +120,6 @@ html, body, [class*="css"] {
     font-family: 'IBM Plex Mono', monospace;
 }
 
-/* Dispatch card */
-.dispatch-card {
-    background: #0f0f0a; border: 1px solid #2a2a1e;
-    border-radius: 3px; padding: 1.4rem; margin-bottom: 1rem;
-}
-.dispatch-current {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
-    color: #e8a838; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 0.4rem;
-}
-.dispatch-heading {
-    font-family: 'DM Serif Display', serif; font-size: 1.25rem;
-    color: #f0ebe2; margin-bottom: 0.6rem; line-height: 1.3;
-}
-.dispatch-body { font-size: 0.85rem; color: #999; line-height: 1.7; }
-.countercurrent-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem;
-    color: #c44aff; text-transform: uppercase; letter-spacing: 0.14em;
-    margin-top: 1rem; margin-bottom: 0.3rem;
-}
-.countercurrent-text {
-    font-family: 'DM Serif Display', serif; font-style: italic;
-    font-size: 1.1rem; color: #c8b8e8; line-height: 1.5;
-}
-
-/* Inputs & buttons */
-.stTextInput > div > div > input,
-.stTextArea > div > div > textarea {
-    background: #111 !important; color: #d4cfc7 !important;
-    border: 1px solid #2a2a2a !important; border-radius: 3px !important;
-}
-.stButton > button {
-    background: transparent !important; border: 1px solid #333 !important;
-    color: #d4cfc7 !important; font-family: 'IBM Plex Mono', monospace !important;
-    font-size: 0.7rem !important; text-transform: uppercase !important;
-}
 .block-container { padding: 2rem 2.5rem 3rem !important; max-width: 1400px; }
 </style>
 """, unsafe_allow_html=True)
@@ -161,24 +128,27 @@ html, body, [class*="css"] {
 
 BADGE_MAP = {
     "reddit": "badge-reddit", "tiktok": "badge-tiktok", "web": "badge-web",
-    "pdf": "badge-pdf", "youtube": "badge-youtube", "rss": "badge-rss"
+    "pdf": "badge-pdf", "youtube": "badge-youtube", "rss": "badge-rss",
+    "discord": "badge-discord"
 }
 
 def call_llm(messages: list[dict], system: str, temperature: float = 0.7) -> str:
-    # ... (código anterior)
-    model = genai.GenerativeModel(
-        model_name="gemini-2.5-flash",  # Versão correta e atualizada
-        system_instruction=system,
-    )
     import google.generativeai as genai
     api_key = os.environ.get("GOOGLE_API_KEY")
     if not api_key: return "⚠️ GOOGLE_API_KEY Missing"
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.0-flash", system_instruction=system) # Using stable version
+    
+    # CORREÇÃO AQUI: gemini-2.5-flash
+    model = genai.GenerativeModel(
+        model_name="gemini-2.5-flash",
+        system_instruction=system
+    )
+    
     history = []
     for msg in messages[:-1]:
         role = "user" if msg["role"] == "user" else "model"
         history.append({"role": role, "parts": [msg["content"]]})
+    
     chat = model.start_chat(history=history)
     try:
         response = chat.send_message(messages[-1]["content"])
@@ -202,20 +172,20 @@ def build_simple_context(signals: list[dict], limit: int = 15) -> str:
 # ── PROMPTS ───────────────────────────────────────────────────────────────────
 
 COUNTERCURRENT_SYSTEM_PROMPT = """You are Countercurrent AI. 
-1. Identify THE CURRENT (mainstream). 
-2. Propose THE COUNTERCURRENT (provocation).
+1. Identify THE CURRENT (mainstream narrative). 
+2. Propose THE COUNTERCURRENT (unexpected provocation).
 Structure: **THE CURRENT:**, **SIGNALS:**, **THE COUNTERCURRENT:**, **RATIONALE:**."""
 
-THINKER_SYSTEM_PROMPT = "You are a strategic creative director. Sharp, incisive, curiosity-driven."
+THINKER_SYSTEM_PROMPT = "You are a strategic creative director. Sharp, incisive, and curiosity-driven."
 
 # ── Session State ─────────────────────────────────────────────────────────────
 
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "dispatch_cache" not in st.session_state: st.session_state.dispatch_cache = {}
 
-# ── Layout ────────────────────────────────────────────────────────────────────
+# ── Header ────────────────────────────────────────────────────────────────────
 
-st.markdown("""<div class="wire-header"><h1>Countercurrent.ai</h1><span class="tagline">Intelligence Wire Room · v2.1</span></div>""", unsafe_allow_html=True)
+st.markdown("""<div class="wire-header"><h1>Countercurrent.ai</h1><span class="tagline">Intelligence Wire Room · v2.2</span></div>""", unsafe_allow_html=True)
 
 signals = load_signals()
 col_left, col_right = st.columns([1, 1], gap="large")
@@ -227,18 +197,16 @@ col_left, col_right = st.columns([1, 1], gap="large")
 with col_left:
     st.markdown('<div class="col-label">Global Mixed Feed (WNBA x NY Liberty)</div>', unsafe_allow_html=True)
     
-    # MIXED FEED LOGIC
     if not signals:
-        st.info("No signals. Run ingestion_ny_liberty.py first.")
+        st.info("No signals. Run ingestion.py first.")
     else:
-        # Group by source to interleave
+        # MIXED FEED LOGIC: Interleave by source
         by_source = {}
         for s in signals:
             src = s.get("source", "web")
             if src not in by_source: by_source[src] = []
             by_source[src].append(s)
         
-        # Interleave sources
         mixed = [item for sublist in zip_longest(*by_source.values()) for item in sublist if item is not None]
         
         for sig in mixed[:40]:
@@ -254,7 +222,7 @@ with col_left:
             </div>""", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# RIGHT COLUMN — Auto-Currents + Intelligence
+# RIGHT COLUMN — Auto-Currents + Intelligence Tabs
 # ══════════════════════════════════════════════════════════════════════════════
 
 with col_right:
@@ -263,11 +231,11 @@ with col_right:
     
     if signals:
         auto_ctx = build_simple_context(signals, limit=12)
-        auto_prompt = f"Analyze these signals and extract 3 emerging themes (max 4 words each) about NY Liberty/WNBA: {auto_ctx}"
-        # Cache for performance
+        auto_prompt = f"Extract 3 very short emerging themes (max 4 words each) from these signals about NY Liberty/WNBA: {auto_ctx}"
+        
         if "auto_themes" not in st.session_state:
             with st.spinner("Decoding currents..."):
-                res = call_llm([{"role": "user", "content": auto_prompt}], "Return only a comma-separated list of themes.")
+                res = call_llm([{"role": "user", "content": auto_prompt}], "Return only a comma-separated list.")
                 st.session_state.auto_themes = res.split(",")
         
         pills = "".join([f'<span class="current-pill">● {t.strip()}</span>' for t in st.session_state.auto_themes])
@@ -275,13 +243,13 @@ with col_right:
     else:
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # --- BOTTOM: STRATEGIC TOOLS ---
+    # --- BOTTOM: STRATEGIC TOOLS TABS ---
     tab_dispatch, tab_thinker, tab_meta = st.tabs(["Strategic Dispatch", "Thinker Partner", "Meta-Analysis"])
 
     with tab_dispatch:
         topic = st.text_input("Brief / Focus Topic", value="WNBA fan culture and high-fashion intersection")
-        if st.button("Generate Countercurrent"):
-            with st.spinner("Processing..."):
+        if st.button("Generate Countercurrent Analysis"):
+            with st.spinner("Thinking..."):
                 ctx = build_simple_context(signals, limit=20)
                 res = call_llm([{"role": "user", "content": f"Context: {ctx}\nTopic: {topic}"}], COUNTERCURRENT_SYSTEM_PROMPT)
                 st.session_state.dispatch_cache["last"] = res
@@ -290,12 +258,13 @@ with col_right:
             st.markdown(st.session_state.dispatch_cache["last"])
 
     with tab_thinker:
+        st.markdown('<div class="col-label">Interrogate the Data Lake</div>', unsafe_allow_html=True)
         for m in st.session_state.chat_history:
             role = "USER" if m["role"] == "user" else "AI"
             st.markdown(f"**{role}:** {m['content']}")
         
-        query = st.text_input("Interrogate Data Lake...", key="chat_in")
-        if st.button("Ask"):
+        query = st.text_input("Type your question...", key="chat_in")
+        if st.button("Ask Partner"):
             st.session_state.chat_history.append({"role": "user", "content": query})
             ctx = build_simple_context(signals, limit=25)
             ans = call_llm(st.session_state.chat_history, f"Context: {ctx}\n{THINKER_SYSTEM_PROMPT}")
@@ -303,9 +272,9 @@ with col_right:
             st.rerun()
 
     with tab_meta:
-        st.markdown('<p style="color:#666;font-size:0.8rem">Meta-Analysis identifies patterns across multiple dispatches saved over time.</p>', unsafe_allow_html=True)
-        if st.button("Run Weekly Meta-Analysis"):
-            st.info("Analysis pending... This requires a history of saved dispatches.")
+        st.markdown('<p style="color:#666;font-size:0.8rem">Meta-Analysis cross-references patterns across all stored signals and dispatches.</p>', unsafe_allow_html=True)
+        if st.button("Run Meta-Analysis"):
+             st.info("Analysis history building... Requires persistent dispatch data.")
 
 # ── Footer ────────────────────────────────────────────────────────────────────
-st.markdown("""<div style="border-top:1px solid #1a1a1a;margin-top:3rem;padding-top:1rem;font-family:monospace;font-size:0.6rem;color:#333;display:flex;justify-content:space-between"><span>COUNTERCURRENT.AI v2.1</span><span>MIXED SIGNAL → INSIGHT</span></div>""", unsafe_allow_html=True)
+st.markdown("""<div style="border-top:1px solid #1a1a1a;margin-top:3rem;padding-top:1rem;font-family:monospace;font-size:0.6rem;color:#333;display:flex;justify-content:space-between"><span>COUNTERCURRENT.AI v2.2</span><span>SIGNALS → VECTORS → INSIGHTS</span></div>""", unsafe_allow_html=True)
