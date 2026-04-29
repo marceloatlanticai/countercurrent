@@ -1,8 +1,24 @@
+# Countercurrent.ai v2 — Python dependencies
+
+# Core
 streamlit>=1.35.0
 python-dotenv>=1.0.0
+
+# Ingestion (Layer 1)
 apify-client>=1.7.0
-google-generativeai>=0.5.0
+
+# Intelligence
+openai>=1.30.0
+anthropic>=0.28.0
+
+# Vectorization (Layer 2)
 pinecone>=3.2.0
 tiktoken>=0.7.0
 pypdf>=4.0.0
-certifi>=2024.0.0
+
+# Email dispatch
+# sendgrid>=6.11.0   ← uncomment when ready to send emails
+
+# Orchestration (future Layer 3 upgrade)
+# langchain>=0.2.0
+# langchain-openai>=0.1.0
