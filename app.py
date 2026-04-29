@@ -165,6 +165,11 @@ BADGE_MAP = {
 }
 
 def call_llm(messages: list[dict], system: str, temperature: float = 0.7) -> str:
+    # ... (código anterior)
+    model = genai.GenerativeModel(
+        model_name="gemini-2.5-flash",  # Versão correta e atualizada
+        system_instruction=system,
+    )
     import google.generativeai as genai
     api_key = os.environ.get("GOOGLE_API_KEY")
     if not api_key: return "⚠️ GOOGLE_API_KEY Missing"
