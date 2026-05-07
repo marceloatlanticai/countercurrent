@@ -130,32 +130,43 @@ with col_left:
 # ══════════════════════════════════════════════════════════════════════════════
 # COLUNA DIREITA: Strategic Intelligence (3+3 Hemingway)
 # ══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════════════
+# COLUNA DIREITA: Strategic Intelligence (v3.7 CORRIGIDA)
+# ══════════════════════════════════════════════════════════════════════════════
 with col_right:
     st.subheader("Strategic Intelligence")
     
     if signals:
-        # Gera o insight automático apenas uma vez por sessão
         if "auto_insight" not in st.session_state:
             with st.spinner("Decoding signals..."):
                 ctx = "\n".join([f"- {s.get('title')}" for s in signals[:15]])
+                # Prompt mais rígido para evitar que a IA mande códigos estranhos
                 instruction = (
-                    "You are a strategic trend spotter. Write in Hemingway style: short, punchy, plainspoken. "
-                    "Identify exactly 3 'Cultural Shifts' and 3 'Countercurrent Shifts' (contrarian provocations). "
-                    "Use markdown bold for headlines."
+                    "Identify exactly 3 'Cultural Shifts' and 3 'Countercurrent Shifts'. "
+                    "Style: Hemingway. Punchy, plainspoken. "
+                    "DO NOT use code blocks or HTML tags. Use markdown only."
                 )
                 st.session_state.auto_insight = call_llm(ctx, instruction)
         
-        # Conteúdo envelopado na caixa cinza
+        # Renderização limpa: Primeiro o Header em HTML, depois o conteúdo em Markdown puro
         st.markdown(f"""
-        <div class="insight-box">
+        <div style="background:#0f100a; border:1px solid #2a2a1e; padding:20px; border-radius:8px;">
             <div style="font-family:monospace; color:#e8a838; font-size:0.7rem; margin-bottom:15px; text-transform:uppercase; border-bottom:1px solid #2a2a1e; padding-bottom:5px;">
                 ⚡ Automated Intelligence Report
             </div>
-            {st.session_state.auto_insight}
-        </div>
         """, unsafe_allow_html=True)
+        
+        # O segredo: renderizar o texto da IA FORA de f-strings complexas para não quebrar tags
+        st.markdown(st.session_state.auto_insight)
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+        
     else:
         st.write("Aguardando dados para análise estratégica...")
+
+    # Abas permanecem iguais abaixo
+    tab1, tab2, tab3 = st.tabs(["Dispatch", "Thinker Partner", "Meta-Analysis"])
+    # ... resto do código
 
     # Abas de Ação
     tab1, tab2, tab3 = st.tabs(["Dispatch", "Thinker Partner", "Meta-Analysis"])
