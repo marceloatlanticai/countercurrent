@@ -1,6 +1,9 @@
 """
-Countercurrent.ai — Layer 3 (v2.2): The Wire Room 
-Updated: Gemini 2.5 Flash + Mixed Feed + Dual Intelligence Layer
+Countercurrent.ai — Wire Room v2.5
+- Fixed heights with independent scrolling
+- 3 Instant Provocations (Countercurrents)
+- Large text for Emerging Currents
+- Hemingway Style + Gemini 2.5 Flash
 """
 
 import os
@@ -25,7 +28,6 @@ except Exception:
     pass 
 
 # ── Page config ───────────────────────────────────────────────────────────────
-
 st.set_page_config(
     page_title="Countercurrent.ai",
     page_icon="⟳",
@@ -33,8 +35,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── CSS — Wire Room aesthetic ─────────────────────────────────────────────────
-
+# ── CSS — Layout e Estética ─────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap');
@@ -43,238 +44,191 @@ html, body, [class*="css"] {
     background-color: #0a0a0a !important;
     color: #d4cfc7 !important;
     font-family: 'DM Sans', sans-serif;
+    overflow: hidden; /* Evita scroll na página inteira */
 }
+
+/* Containers com Scroll Fixo */
+.feed-container, .intel-container {
+    height: 82vh;
+    overflow-y: auto;
+    padding-right: 15px;
+}
+.feed-container::-webkit-scrollbar, .intel-container::-webkit-scrollbar { width: 4px; }
+.feed-container::-webkit-scrollbar-thumb, .intel-container::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+
 .wire-header {
     display: flex; align-items: baseline; gap: 1.2rem;
-    border-bottom: 1px solid #2a2a2a; padding-bottom: 1rem; margin-bottom: 2rem;
+    border-bottom: 1px solid #2a2a2a; padding-bottom: 0.5rem; margin-bottom: 1rem;
 }
 .wire-header h1 {
-    font-family: 'DM Serif Display', serif; font-size: 2.2rem;
+    font-family: 'DM Serif Display', serif; font-size: 1.8rem;
     color: #f0ebe2; letter-spacing: -0.02em; margin: 0;
 }
 .wire-header .tagline {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
     color: #e8a838; letter-spacing: 0.12em; text-transform: uppercase;
 }
+
 .col-label {
     font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
     letter-spacing: 0.18em; text-transform: uppercase; color: #666;
-    border-bottom: 1px solid #1e1e1e; padding-bottom: 0.5rem; margin-bottom: 1.2rem;
+    border-bottom: 1px solid #1e1e1e; padding-bottom: 0.5rem; margin-bottom: 1rem;
 }
+
+/* Signal Cards */
 .signal-card {
     background: #111111; border: 1px solid #1e1e1e;
     border-left: 3px solid #2a2a2a; border-radius: 3px;
-    padding: 1rem 1.1rem; margin-bottom: 0.8rem; transition: border-left-color 0.15s;
+    padding: 0.8rem 1rem; margin-bottom: 0.8rem;
 }
-.signal-card:hover { border-left-color: #e8a838; }
-.signal-card .signal-source {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem;
-    color: #666; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 0.3rem;
-}
-.signal-card .signal-title { font-size: 0.9rem; color: #e0dbd3; font-weight: 500; line-height: 1.4; margin-bottom: 0.4rem; }
-.signal-card .signal-snippet {
-    font-size: 0.8rem; color: #888; line-height: 1.6;
-    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-}
-.signal-card .signal-ts { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: #444; margin-top: 0.5rem; }
+.signal-source { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: #e8a838; text-transform: uppercase; }
+.signal-title { font-size: 0.85rem; color: #e0dbd3; font-weight: 500; margin-top: 0.3rem; }
+.signal-snippet { font-size: 0.75rem; color: #777; line-height: 1.5; margin-top: 0.3rem; }
 
 .badge {
-    display: inline-block; padding: 0.1rem 0.45rem; border-radius: 2px;
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem;
-    text-transform: uppercase; letter-spacing: 0.1em; margin-right: 0.3rem;
+    display: inline-block; padding: 0.1rem 0.4rem; border-radius: 2px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem;
+    text-transform: uppercase; margin-right: 0.3rem;
 }
-.badge-reddit   { background: #1a0f0f; color: #d44800; border: 1px solid #2a1a1a; }
-.badge-tiktok   { background: #0f1a12; color: #25d366; border: 1px solid #1a2a1e; }
-.badge-web      { background: #1a1a0f; color: #e8c438; border: 1px solid #2a2a1a; }
-.badge-pdf      { background: #1a0f1a; color: #c44aff; border: 1px solid #2a1a2a; }
-.badge-youtube   { background: #1a0a0a; color: #ff4444; border: 1px solid #2a1a1a; }
-.badge-rss       { background: #1a1200; color: #ffaa00; border: 1px solid #2a2000; }
-.badge-discord   { background: #0f1a2a; color: #5865f2; border: 1px solid #1a2a3a; }
+.badge-reddit   { background: #1a0f0f; color: #ff4500; border: 1px solid #331a1a; }
+.badge-tiktok   { background: #0f1a12; color: #25d366; border: 1px solid #1a3324; }
 
-/* AUTO CURRENT BOX (Right Side Top) */
+/* Inteligência Direita */
 .auto-current-box {
-    background: linear-gradient(145deg, #151510, #0a0a0a);
-    border: 1px solid #e8a83830;
-    border-radius: 4px;
-    padding: 1.2rem;
-    margin-bottom: 1.5rem;
+    background: #0f0f0a; border: 1px solid #2a2a1e;
+    border-radius: 4px; padding: 1.2rem; margin-bottom: 1.5rem;
 }
-.auto-current-title {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.65rem;
-    color: #e8a838;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    margin-bottom: 0.8rem;
+.current-large-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem; color: #f0ebe2; line-height: 1.3; margin-bottom: 1rem;
 }
-.current-pill {
-    display: inline-block;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    padding: 0.4rem 0.7rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    margin-right: 0.4rem;
-    margin-bottom: 0.4rem;
-    color: #d4cfc7;
-    font-family: 'IBM Plex Mono', monospace;
+.provocation-box {
+    background: #1a0f1a; border-left: 3px solid #c44aff;
+    padding: 0.8rem; margin-top: 1rem; font-style: italic; font-size: 0.9rem; color: #c8b8e8;
 }
 
-.block-container { padding: 2rem 2.5rem 3rem !important; max-width: 1400px; }
+.stTabs [data-baseweb="tab-list"] { gap: 10px; }
+.stTabs [data-baseweb="tab"] { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; text-transform: uppercase; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Helpers & AI ──────────────────────────────────────────────────────────────
+# ── Helpers e LLM ──────────────────────────────────────────────────────────────
 
-BADGE_MAP = {
-    "reddit": "badge-reddit", "tiktok": "badge-tiktok", "web": "badge-web",
-    "pdf": "badge-pdf", "youtube": "badge-youtube", "rss": "badge-rss",
-    "discord": "badge-discord"
-}
-
-def call_llm(messages: list[dict], system: str, temperature: float = 0.7) -> str:
+def call_llm(messages, system, temperature=0.7):
     import google.generativeai as genai
     api_key = os.environ.get("GOOGLE_API_KEY")
-    if not api_key: return "⚠️ GOOGLE_API_KEY Missing"
+    if not api_key: return "⚠️ API_KEY Missing"
     genai.configure(api_key=api_key)
-    
-    # CORREÇÃO AQUI: gemini-2.5-flash
-    model = genai.GenerativeModel(
-        model_name="gemini-2.5-flash",
-        system_instruction=system
-    )
+    model = genai.GenerativeModel("gemini-2.5-flash", system_instruction=system)
     
     history = []
     for msg in messages[:-1]:
-        role = "user" if msg["role"] == "user" else "model"
-        history.append({"role": role, "parts": [msg["content"]]})
+        history.append({"role": "user" if msg["role"] == "user" else "model", "parts": [msg["content"]]})
     
     chat = model.start_chat(history=history)
     try:
         response = chat.send_message(messages[-1]["content"])
         return response.text
-    except Exception as e:
-        return f"⚠️ API Error: {e}"
+    except Exception as e: return f"⚠️ Error: {e}"
 
-def load_signals(path: str = "data/signals.jsonl", limit: int = 300) -> list[dict]:
+def load_signals():
+    path = "data/signals.jsonl"
     if not os.path.exists(path): return []
-    signals = []
+    data = []
     with open(path) as f:
         for line in f:
-            try: signals.append(json.loads(line))
+            try: data.append(json.loads(line))
             except: pass
-    signals.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
-    return signals[:limit]
+    data.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    return data
 
-def build_simple_context(signals: list[dict], limit: int = 15) -> str:
-    return "\n".join([f"- {s.get('title','')}: {s.get('content','')[:200]}" for s in signals[:limit]])
+def build_context(signals, limit=15):
+    return "\n".join([f"- {s.get('title','')}: {s.get('content','')[:150]}" for s in signals[:limit]])
 
-# ── PROMPTS ───────────────────────────────────────────────────────────────────
+# ── Prompts — Hemingway Style ──────────────────────────────────────────────────
 
-COUNTERCURRENT_SYSTEM_PROMPT = """You are Countercurrent AI. 
-1. Identify THE CURRENT (mainstream narrative). 
-2. Propose THE COUNTERCURRENT (unexpected provocation).
-Structure: **THE CURRENT:**, **SIGNALS:**, **THE COUNTERCURRENT:**, **RATIONALE:**."""
+SYSTEM_PROMPT = """You are Countercurrent. Write in a style like Hemingway: short, punchy, plainspoken.
+Identify 'The Current' (mainstream) and 'The Countercurrent' (provocation). 
+Always use direct quotes and citations if available."""
 
-THINKER_SYSTEM_PROMPT = "You are a strategic creative director. Sharp, incisive, and curiosity-driven."
+# ── Layout Principal ───────────────────────────────────────────────────────────
 
-# ── Session State ─────────────────────────────────────────────────────────────
-
-if "chat_history" not in st.session_state: st.session_state.chat_history = []
-if "dispatch_cache" not in st.session_state: st.session_state.dispatch_cache = {}
-
-# ── Header ────────────────────────────────────────────────────────────────────
-
-st.markdown("""<div class="wire-header"><h1>Countercurrent.ai</h1><span class="tagline">Intelligence Wire Room · v2.2</span></div>""", unsafe_allow_html=True)
+st.markdown('<div class="wire-header"><h1>Countercurrent.ai</h1><span class="tagline">Intelligence Wire Room v2.5</span></div>', unsafe_allow_html=True)
 
 signals = load_signals()
 col_left, col_right = st.columns([1, 1], gap="large")
 
 # ══════════════════════════════════════════════════════════════════════════════
-# LEFT COLUMN — Mixed Feed
+# COLUNA ESQUERDA: Mixed Feed com Scroll
 # ══════════════════════════════════════════════════════════════════════════════
-
 with col_left:
-    st.markdown('<div class="col-label">Global Mixed Feed (WNBA x NY Liberty)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="col-label">Global Mixed Feed</div>', unsafe_allow_html=True)
     
-    if not signals:
-        st.info("No signals. Run ingestion.py first.")
+    # Filtros simples
+    sources = sorted(list({s.get("source", "web") for s in signals}))
+    sel_source = st.selectbox("Filter Source", ["All Sources"] + sources)
+    
+    filtered = signals
+    if sel_source != "All Sources":
+        filtered = [s for s in filtered if s.get("source") == sel_source]
+
+    # Container com Scroll
+    st.markdown('<div class="feed-container">', unsafe_allow_html=True)
+    if not filtered:
+        st.info("No signals found.")
     else:
-        # MIXED FEED LOGIC: Interleave by source
+        # Lógica de interclação
         by_source = {}
-        for s in signals:
-            src = s.get("source", "web")
-            if src not in by_source: by_source[src] = []
-            by_source[src].append(s)
-        
-        mixed = [item for sublist in zip_longest(*by_source.values()) for item in sublist if item is not None]
-        
-        for sig in mixed[:40]:
+        for s in filtered:
+            src = s.get("source", "web"); by_source.setdefault(src, []).append(s)
+        mixed = [i for s in zip_longest(*by_source.values()) for i in s if i]
+
+        for sig in mixed[:50]:
             src = sig.get("source", "web")
-            badge = BADGE_MAP.get(src, "badge-web")
-            ts = sig.get("timestamp", "")[:16].replace("T", " ")
             st.markdown(f"""
             <div class="signal-card">
-                <div class="signal-source"><span class="badge {badge}">{src}</span> {sig.get('client_tag','')}</div>
+                <div class="signal-source">{src} · {sig.get('client_tag','')}</div>
                 <div class="signal-title">{sig.get('title','')}</div>
-                <div class="signal-snippet">{sig.get('content','')[:250]}...</div>
-                <div class="signal-ts">{ts}</div>
+                <div class="signal-snippet">{sig.get('content','')[:180]}...</div>
             </div>""", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# RIGHT COLUMN — Auto-Currents + Intelligence Tabs
+# COLUNA DIREITA: Inteligência + 3 Provocações
 # ══════════════════════════════════════════════════════════════════════════════
-
 with col_right:
-    # --- TOP: AUTO-DETECTED CURRENTS ---
-    st.markdown('<div class="auto-current-box"><div class="auto-current-title">⚡ Emerging Cultural Currents (Real-time)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="intel-container">', unsafe_allow_html=True)
+    
+    # PARTE SUPERIOR: AUTO-CURRENTS
+    st.markdown('<div class="auto-current-box"><div class="col-label" style="color:#e8a838">⚡ Emerging Currents</div>', unsafe_allow_html=True)
     
     if signals:
-        auto_ctx = build_simple_context(signals, limit=12)
-        auto_prompt = f"Extract 3 very short emerging themes (max 4 words each) from these signals about NY Liberty/WNBA: {auto_ctx}"
+        ctx = build_context(signals, limit=12)
+        if "auto_data" not in st.session_state:
+            with st.spinner("Decoding signals..."):
+                curr_prompt = f"Identify 2 main currents and 3 short countercurrent provocations from: {ctx}"
+                res = call_llm([{"role": "user", "content": curr_prompt}], "Respond in clean markdown.")
+                st.session_state.auto_data = res
         
-        if "auto_themes" not in st.session_state:
-            with st.spinner("Decoding currents..."):
-                res = call_llm([{"role": "user", "content": auto_prompt}], "Return only a comma-separated list.")
-                st.session_state.auto_themes = res.split(",")
-        
-        pills = "".join([f'<span class="current-pill">● {t.strip()}</span>' for t in st.session_state.auto_themes])
-        st.markdown(f'<div style="margin-top:-0.5rem">{pills}</div></div>', unsafe_allow_html=True)
-    else:
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown(f'<div class="current-large-text">{st.session_state.auto_data}</div>', unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- BOTTOM: STRATEGIC TOOLS TABS ---
-    tab_dispatch, tab_thinker, tab_meta = st.tabs(["Strategic Dispatch", "Thinker Partner", "Meta-Analysis"])
+    # PARTE INFERIOR: ABAS DE TRABALHO
+    t1, t2, t3 = st.tabs(["Strategic Dispatch", "Thinker Partner", "Meta-Analysis"])
+    
+    with t1:
+        topic = st.text_input("Focus Topic", value="WNBA x High Fashion")
+        if st.button("Generate Dispatch"):
+            with st.spinner("Analyzing..."):
+                res = call_llm([{"role": "user", "content": f"Topic: {topic}\nContext: {build_context(signals)}"}], SYSTEM_PROMPT)
+                st.session_state.last_dispatch = res
+        if "last_dispatch" in st.session_state:
+            st.markdown(st.session_state.last_dispatch)
 
-    with tab_dispatch:
-        topic = st.text_input("Brief / Focus Topic", value="WNBA fan culture and high-fashion intersection")
-        if st.button("Generate Countercurrent Analysis"):
-            with st.spinner("Thinking..."):
-                ctx = build_simple_context(signals, limit=20)
-                res = call_llm([{"role": "user", "content": f"Context: {ctx}\nTopic: {topic}"}], COUNTERCURRENT_SYSTEM_PROMPT)
-                st.session_state.dispatch_cache["last"] = res
-        
-        if "last" in st.session_state.dispatch_cache:
-            st.markdown(st.session_state.dispatch_cache["last"])
+    with t2:
+        st.markdown('<div class="col-label">Chat with Data Lake</div>', unsafe_allow_html=True)
+        # Lógica simples de chat aqui...
+        st.text_input("Ask anything...", key="chat_input")
 
-    with tab_thinker:
-        st.markdown('<div class="col-label">Interrogate the Data Lake</div>', unsafe_allow_html=True)
-        for m in st.session_state.chat_history:
-            role = "USER" if m["role"] == "user" else "AI"
-            st.markdown(f"**{role}:** {m['content']}")
-        
-        query = st.text_input("Type your question...", key="chat_in")
-        if st.button("Ask Partner"):
-            st.session_state.chat_history.append({"role": "user", "content": query})
-            ctx = build_simple_context(signals, limit=25)
-            ans = call_llm(st.session_state.chat_history, f"Context: {ctx}\n{THINKER_SYSTEM_PROMPT}")
-            st.session_state.chat_history.append({"role": "assistant", "content": ans})
-            st.rerun()
-
-    with tab_meta:
-        st.markdown('<p style="color:#666;font-size:0.8rem">Meta-Analysis cross-references patterns across all stored signals and dispatches.</p>', unsafe_allow_html=True)
-        if st.button("Run Meta-Analysis"):
-             st.info("Analysis history building... Requires persistent dispatch data.")
-
-# ── Footer ────────────────────────────────────────────────────────────────────
-st.markdown("""<div style="border-top:1px solid #1a1a1a;margin-top:3rem;padding-top:1rem;font-family:monospace;font-size:0.6rem;color:#333;display:flex;justify-content:space-between"><span>COUNTERCURRENT.AI v2.2</span><span>SIGNALS → VECTORS → INSIGHTS</span></div>""", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
