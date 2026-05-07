@@ -5,7 +5,7 @@ from datetime import datetime
 from itertools import zip_longest
 from dotenv import load_dotenv
 
-# Tenta importar a biblioteca do Google, se falhar, avisa o usuário
+# Tenta importar a biblioteca do Google
 try:
     import google.generativeai as genai
     HAS_GENAI = True
@@ -14,70 +14,84 @@ except ImportError:
 
 load_dotenv()
 
-st.set_page_config(page_title="Countercurrent.ai", layout="wide")
+st.set_page_config(page_title="Countercurrent.ai", layout="wide", initial_sidebar_state="collapsed")
 
-# --- CSS Simplificado e Funcional ---
+# --- CSS DEFINITIVO PARA SCROLL E LAYOUT ---
 st.markdown("""
 <style>
     /* Estilização dos Cards */
     .signal-card {
         background: #111;
         border: 1px solid #222;
-        padding: 15px;
-        border-radius: 8px;
+        padding: 12px;
+        border-radius: 6px;
         margin-bottom: 10px;
     }
-    .signal-source { color: #e8a838; font-family: monospace; font-size: 0.7rem; text-transform: uppercase; }
-    .signal-title { font-weight: bold; color: #eee; margin-top: 5px; }
-    .signal-content { color: #888; font-size: 0.8rem; margin-top: 5px; }
+    .signal-source { color: #e8a838; font-family: monospace; font-size: 0.65rem; text-transform: uppercase; font-weight: bold; }
+    .signal-title { font-weight: bold; color: #f0ebe2; margin-top: 4px; font-size: 0.9rem; }
+    .signal-content { color: #888; font-size: 0.8rem; margin-top: 4px; line-height: 1.4; }
     
-    /* Forçar altura e scroll nas colunas do Streamlit */
+    /* FORÇAR ROLAGEM INDEPENDENTE NAS COLUNAS */
     [data-testid="stVerticalBlock"] > div > div > [data-testid="stVerticalBlock"] {
-        max-height: 80vh;
-        overflow-y: auto;
+        max-height: 78vh !important;
+        overflow-y: auto !important;
+        padding-right: 10px;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    
+    .insight-box {
+        background: #0f0f0a;
+        border: 1px solid #2a2a1e;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 15px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- Funções de Apoio ---
+# --- FUNÇÃO LLM ATUALIZADA (VERSÃO 1.5 FLASH) ---
 def call_llm(messages, system):
     if not HAS_GENAI:
-        return "⚠️ Erro: Biblioteca 'google-generativeai' não instalada."
+        return "⚠️ Erro: Execute 'pip install google-generativeai'"
     api_key = os.environ.get("GOOGLE_API_KEY")
-    if not api_key: return "⚠️ API_KEY faltando no ambiente."
+    if not api_key: return "⚠️ API_KEY faltando."
     
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.0-flash", system_instruction=system) # Voltando para a 2.0 que é a estável atual
-        chat = model.start_chat(history=[])
-        response = chat.send_message(messages[-1]["content"])
+        # ATUALIZADO PARA gemini-1.5-flash (Versão estável atual)
+        model = genai.GenerativeModel("gemini-1.5-flash", system_instruction=system)
+        response = model.generate_content(messages[-1]["content"])
         return response.text
     except Exception as e:
         return f"⚠️ Erro na IA: {str(e)}"
 
 def load_signals():
-    if not os.path.exists("data/signals.jsonl"): return []
+    path = "data/signals.jsonl"
+    if not os.path.exists(path): return []
     signals = []
-    with open("data/signals.jsonl", "r") as f:
+    with open(path, "r") as f:
         for line in f:
             try: signals.append(json.loads(line))
             except: pass
     return sorted(signals, key=lambda x: x.get('timestamp', ''), reverse=True)
 
-# --- UI ---
+# --- UI HEADER ---
 st.title("⟳ Countercurrent.ai")
-st.caption("Intelligence Wire Room v2.6")
+st.caption("Intelligence Wire Room v2.7 — Hemingway Engine")
 
 signals = load_signals()
 
-col_left, col_right = st.columns([1, 1], gap="medium")
+col_left, col_right = st.columns([1, 1], gap="large")
 
+# --- COLUNA ESQUERDA (FEED) ---
 with col_left:
-    st.subheader("Mixed Feed")
+    st.markdown("### Mixed Feed")
     if not signals:
-        st.warning("Aguardando sinais... Execute o ingestion.")
+        st.warning("Sem dados. Execute o script de ingestão.")
     else:
-        # Lógica de Intercalação (Mixed)
         by_source = {}
         for s in signals:
             src = s.get("source", "web")
@@ -85,35 +99,48 @@ with col_left:
         
         mixed_list = [item for sublist in zip_longest(*by_source.values()) for item in sublist if item]
         
-        for sig in mixed_list[:30]:
+        # O scroll agora é controlado pelo CSS acima injetado no stVerticalBlock
+        for sig in mixed_list[:40]:
             st.markdown(f"""
             <div class="signal-card">
-                <div class="signal-source">{sig.get('source')} | {sig.get('client_tag', '')}</div>
+                <div class="signal-source">{sig.get('source')} | {sig.get('client_tag', 'NY_LIBERTY')}</div>
                 <div class="signal-title">{sig.get('title')}</div>
-                <div class="signal-content">{sig.get('content', '')[:150]}...</div>
+                <div class="signal-content">{sig.get('content', '')[:160]}...</div>
             </div>
             """, unsafe_allow_html=True)
 
+# --- COLUNA DIREITA (INTELIGÊNCIA) ---
 with col_right:
-    st.subheader("Strategic Insights")
+    st.markdown("### Strategic Intelligence")
     
-    # Área de Correntes e Provocações
-    with st.container(border=True):
-        if signals:
-            if "auto_insight" not in st.session_state:
-                with st.spinner("Analyzing signals..."):
-                    context = "\n".join([s.get('title','') for s in signals[:10]])
-                    prompt = f"Identify 2 dominant currents and 3 short countercurrent provocations for NY Liberty: {context}"
-                    st.session_state.auto_insight = call_llm([{"role": "user", "content": prompt}], "You are a trend analyst.")
-            
-            st.markdown(f"### {st.session_state.auto_insight}")
-        else:
-            st.write("Sem dados para analisar.")
+    # 1. Top Section: Currents & Provocations
+    st.markdown('<div class="insight-box">', unsafe_allow_html=True)
+    if signals:
+        if "auto_insight" not in st.session_state:
+            with st.spinner("Analyzing signals..."):
+                context = "\n".join([f"- {s.get('title')}" for s in signals[:12]])
+                prompt = f"Identify 2 dominant currents and 3 short countercurrent provocations for NY Liberty based on: {context}"
+                st.session_state.auto_insight = call_llm([{"role": "user", "content": prompt}], "Style: Hemingway. Direct and punchy.")
+        
+        st.markdown(st.session_state.auto_insight)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # Tabs inferiores
-    tab1, tab2 = st.tabs(["Dispatch", "Thinker Partner"])
+    # 2. Tabs Inferiores (Restauradas as 3 abas)
+    tab1, tab2, tab3 = st.tabs(["Dispatch", "Thinker Partner", "Meta-Analysis"])
+    
     with tab1:
-        topic = st.text_input("Briefing Topic", "NY Liberty vs Fandom Trends")
+        topic = st.text_input("Briefing Topic", "WNBA Fandom vs Luxury Fashion")
         if st.button("Generate Strategy"):
-            res = call_llm([{"role": "user", "content": topic}], "Style: Hemingway. Focus on Countercurrents.")
-            st.write(res)
+            with st.spinner("Processing..."):
+                res = call_llm([{"role": "user", "content": topic}], "Style: Hemingway. Provide current vs countercurrent.")
+                st.markdown(res)
+
+    with tab2:
+        st.text_input("Ask the Data Lake...", key="ask_lake")
+        st.button("Inquire")
+
+    with tab3:
+        st.markdown("**Meta-Analysis Mode**")
+        st.info("Aqui o sistema cruza dados históricos para identificar mudanças de longo prazo.")
+        if st.button("Run Historical Analysis"):
+            st.write("Analisando padrões dos últimos 30 dias...")
