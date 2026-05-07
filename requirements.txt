@@ -1,5 +1,7 @@
 # Countercurrent.ai v2 — Python dependencies
 
+google-generativeai
+
 # Core
 streamlit>=1.35.0
 python-dotenv>=1.0.0
