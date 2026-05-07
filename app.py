@@ -164,9 +164,7 @@ with col_right:
     else:
         st.write("Aguardando dados para análise estratégica...")
 
-    # Abas permanecem iguais abaixo
-    tab1, tab2, tab3 = st.tabs(["Dispatch", "Thinker Partner", "Meta-Analysis"])
-    # ... resto do código
+ 
 
     # Abas de Ação
     tab1, tab2, tab3 = st.tabs(["Dispatch", "Thinker Partner", "Meta-Analysis"])
