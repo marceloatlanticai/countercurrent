@@ -102,33 +102,38 @@ with col_left:
                 """, unsafe_allow_html=True)
 
 # --- COLUNA DIREITA (INTELIGÊNCIA) ---
+# ══════════════════════════════════════════════════════════════════════════════
+# COLUNA DIREITA: Inteligência Estratégica (v3.6)
+# ══════════════════════════════════════════════════════════════════════════════
 with col_right:
     st.subheader("Strategic Intelligence")
     
-    st.markdown('<div class="insight-box">', unsafe_allow_html=True)
     if signals:
         if "auto_insight" not in st.session_state:
-            with st.spinner("Analyzing signals..."):
+            with st.spinner("Decoding cultural shifts..."):
                 ctx = "\n".join([f"- {s.get('title')}" for s in signals[:15]])
-                st.session_state.auto_insight = call_llm(
-                    ctx, 
-                    "Style: Hemingway. Identify 2 current cultural shifts and 3 contrarian countercurrent provocations."
+                # Prompt ajustado para 3+3 como você pediu
+                prompt = (
+                    "Based on these signals, identify 3 'Cultural Shifts' (the current trend) "
+                    "and 3 'Countercurrent Shifts' (the contrarian provocations). "
+                    "Style: Hemingway. Be punchy. Use markdown bold for headlines."
                 )
-        st.markdown(st.session_state.auto_insight)
-    st.markdown('</div>', unsafe_allow_html=True)
+                st.session_state.auto_insight = call_llm(ctx, prompt)
+        
+        # Agora colocamos TODO o conteúdo dentro da caixa cinza
+        st.markdown(f"""
+        <div class="insight-box">
+            <div style="font-family:monospace; color:#e8a838; font-size:0.7rem; margin-bottom:10px; text-transform:uppercase;">
+                ⚡ Automated Intelligence Report
+            </div>
+            {st.session_state.auto_insight}
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.info("Aguardando sinais para análise.")
 
+    # Tabs Inferiores
     tab1, tab2, tab3 = st.tabs(["Dispatch", "Thinker Partner", "Meta-Analysis"])
-    with tab1:
-        topic = st.text_input("Dispatch Topic", "WNBA x Fashion Strategy")
-        if st.button("Generate Strategy"):
-            with st.spinner("Writing..."):
-                res = call_llm(topic, "Style: Hemingway. Provide a short strategic dispatch with Current vs Countercurrent.")
-                st.markdown(res)
-    
-    with tab2:
-        st.text_input("Ask the Data Lake", key="lake_chat")
-        st.button("Inquire")
-
-    with tab3:
+    # ... (mantenha o código das abas como estava)
         st.markdown("**Meta-Analysis Mode**")
         st.button("Run Historical Cross-Reference")
