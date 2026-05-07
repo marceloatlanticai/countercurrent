@@ -10,7 +10,7 @@ load_dotenv()
 
 st.set_page_config(page_title="Countercurrent.ai", layout="wide", initial_sidebar_state="collapsed")
 
-# --- CSS PARA ESTÉTICA ---
+# --- CSS — Estética Wire Room ---
 st.markdown("""
 <style>
     .stApp { background-color: #0a0a0a; }
@@ -18,54 +18,40 @@ st.markdown("""
         background: #111; border: 1px solid #222;
         padding: 12px; border-radius: 6px; margin-bottom: 10px;
     }
-    .signal-source { color: #e8a838; font-family: monospace; font-size: 0.65rem; text-transform: uppercase; }
-    .signal-title { font-weight: bold; color: #f0ebe2; font-size: 0.9rem; }
+    .signal-source { color: #e8a838; font-family: monospace; font-size: 0.65rem; text-transform: uppercase; font-weight: bold; }
+    .signal-title { font-weight: bold; color: #f0ebe2; font-size: 0.9rem; margin-top: 4px; }
     .insight-box {
         background: #0f100a; border: 1px solid #2a2a1e;
         padding: 20px; border-radius: 8px; margin-bottom: 15px;
     }
+    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
+    .stTabs [data-baseweb="tab"] { font-family: monospace; font-size: 0.7rem; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- FUNÇÃO LLM (VERSÃO ULTRA-ROBUSTA) ---
+# --- FUNÇÃO LLM (ROTA VALIDADA PELO SEU TESTE) ---
 def call_llm(user_query, system_instruction):
     api_key = os.environ.get("GOOGLE_API_KEY")
-    if not api_key: return "⚠️ API_KEY faltando no arquivo .env"
+    if not api_key: return "⚠️ API_KEY não encontrada."
     
-    # Rota v1 estável
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+    # Rota exata para o modelo que apareceu no seu teste
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
     
     payload = {
         "contents": [{
-            "parts": [{"text": f"Instruction: {system_instruction}\n\nContext/Query: {user_query}"}]
+            "parts": [{"text": f"SYSTEM INSTRUCTION: {system_instruction}\n\nUSER QUERY: {user_query}"}]
         }],
-        "safetySettings": [
-            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
-        ],
-        "generationConfig": {
-            "temperature": 0.7,
-            "maxOutputTokens": 800
-        }
+        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 1000}
     }
     
     try:
         response = requests.post(url, json=payload, timeout=20)
         data = response.json()
-        
-        # Se houver erro estrutural na resposta
-        if 'error' in data:
-            return f"⚠️ Erro do Google: {data['error']['message']}"
-            
-        # Se a resposta foi bloqueada por segurança (mesmo com os filtros em NONE)
-        if 'candidates' not in data or not data['candidates']:
-            return f"⚠️ Resposta bloqueada ou vazia. Motivo: {data.get('promptFeedback', {}).get('blockReason', 'Desconhecido')}"
-        
-        return data['candidates'][0]['content']['parts'][0]['text']
+        if 'candidates' in data:
+            return data['candidates'][0]['content']['parts'][0]['text']
+        return f"⚠️ Erro do Google: {data.get('error', {}).get('message', 'Erro desconhecido')}"
     except Exception as e:
-        return f"⚠️ Falha técnica: {str(e)}"
+        return f"⚠️ Falha: {str(e)}"
 
 def load_signals():
     path = "data/signals.jsonl"
@@ -79,31 +65,29 @@ def load_signals():
     except: return []
     return sorted(signals, key=lambda x: x.get('timestamp', ''), reverse=True)
 
-# --- UI ---
+# --- UI HEADER ---
 st.title("⟳ Countercurrent.ai")
-st.caption("Wire Room v3.3 — Debug Mode")
+st.caption("Wire Room v3.5 — Gemini 2.5 Flash Engine")
 
 signals = load_signals()
 col_left, col_right = st.columns([1, 1], gap="large")
 
+# --- COLUNA ESQUERDA (FEED + SCROLL) ---
 with col_left:
-    st.subheader("Mixed Feed")
+    st.subheader("Global Mixed Feed")
     
     if signals:
         sources = sorted(list({s.get("source", "web") for s in signals}))
         selected_source = st.selectbox("Filter Network", ["All Networks"] + sources)
         
-        filtered = signals
-        if selected_source != "All Networks":
-            filtered = [s for s in signals if s.get("source") == selected_source]
+        filtered = [s for s in signals if selected_source == "All Networks" or s.get("source") == selected_source]
         
-        # CONTAINER COM SCROLL NATIVO
+        # CONTAINER DE SCROLL NATIVO (Altura fixa)
         with st.container(height=650):
             if selected_source == "All Networks":
                 by_src = {}
                 for s in filtered:
-                    src = s.get("source", "web")
-                    by_src.setdefault(src, []).append(s)
+                    src = s.get("source", "web"); by_src.setdefault(src, []).append(s)
                 display_list = [i for sub in zip_longest(*by_src.values()) for i in sub if i]
             else:
                 display_list = filtered
@@ -117,34 +101,34 @@ with col_left:
                 </div>
                 """, unsafe_allow_html=True)
 
+# --- COLUNA DIREITA (INTELIGÊNCIA) ---
 with col_right:
     st.subheader("Strategic Intelligence")
     
     st.markdown('<div class="insight-box">', unsafe_allow_html=True)
     if signals:
         if "auto_insight" not in st.session_state:
-            with st.spinner("Decoding signals..."):
-                context = "\n".join([f"- {s.get('title')}" for s in signals[:15]])
+            with st.spinner("Analyzing signals..."):
+                ctx = "\n".join([f"- {s.get('title')}" for s in signals[:15]])
                 st.session_state.auto_insight = call_llm(
-                    context, 
-                    "You are a trend spotter for NY Liberty. Style: Hemingway. Give 2 currents and 3 counter-provocations."
+                    ctx, 
+                    "Style: Hemingway. Identify 2 current cultural shifts and 3 contrarian countercurrent provocations."
                 )
         st.markdown(st.session_state.auto_insight)
     st.markdown('</div>', unsafe_allow_html=True)
 
     tab1, tab2, tab3 = st.tabs(["Dispatch", "Thinker Partner", "Meta-Analysis"])
     with tab1:
-        topic = st.text_input("Topic", "WNBA Trends")
-        if st.button("Run Dispatch"):
-            with st.spinner("Analyzing..."):
-                res = call_llm(topic, "Style: Hemingway. Strategic Countercurrent.")
+        topic = st.text_input("Dispatch Topic", "WNBA x Fashion Strategy")
+        if st.button("Generate Strategy"):
+            with st.spinner("Writing..."):
+                res = call_llm(topic, "Style: Hemingway. Provide a short strategic dispatch with Current vs Countercurrent.")
                 st.markdown(res)
     
     with tab2:
-        st.text_input("Interrogate Lake", key="lake_chat")
-        st.button("Search")
+        st.text_input("Ask the Data Lake", key="lake_chat")
+        st.button("Inquire")
 
     with tab3:
         st.markdown("**Meta-Analysis Mode**")
-        if st.button("Run Patterns"):
-            st.write("Análise de padrões habilitada.")
+        st.button("Run Historical Cross-Reference")
