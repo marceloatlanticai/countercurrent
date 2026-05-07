@@ -93,26 +93,36 @@ with col_left:
                 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# COLUNA DIREITA: Strategic Intelligence (v3.10 - 3+3 PROMPT FIX)
+# COLUNA DIREITA: Strategic Intelligence (v3.11 - RESET FIX)
 # ══════════════════════════════════════════════════════════════════════════════
 with col_right:
-    st.subheader("Strategic Intelligence")
-    
+    col_title, col_reset = st.columns([3, 1])
+    with col_title:
+        st.subheader("Strategic Intelligence")
+    with col_reset:
+        # Botão para limpar a memória e forçar a IA a ler o novo prompt
+        if st.button("🔄 Refresh"):
+            if "auto_insight" in st.session_state:
+                del st.session_state.auto_insight
+            st.rerun()
+
     if signals:
         if "auto_insight" not in st.session_state:
             with st.spinner("Deep scanning cultural currents..."):
-                ctx = "\n".join([f"- {s.get('title')}" for s in signals[:20]])
+                ctx = "\n".join([f"- {s.get('title')}" for s in signals[:25]])
                 
-                # Prompt reforçado para garantir a estrutura 3+3
+                # Prompt ultra-específico para forçar a lista
                 instruction = (
-                    "Analyze these signals and provide exactly two sections:\n"
-                    "1. CULTURAL SHIFTS: Identify 3 major current trends.\n"
-                    "2. COUNTERCURRENT SHIFTS: Identify 3 contrarian provocations or hidden shifts.\n\n"
-                    "Style: Hemingway. Professional, punchy, brief. Use markdown bold for titles."
+                    "You are a strategic analyst. Provide exactly this structure:\n\n"
+                    "### CULTURAL SHIFTS\n"
+                    "1. [Trend 1]\n2. [Trend 2]\n3. [Trend 3]\n\n"
+                    "### COUNTERCURRENT SHIFTS\n"
+                    "1. [Provocation 1]\n2. [Provocation 2]\n3. [Provocation 3]\n\n"
+                    "Style: Hemingway. Punchy and professional."
                 )
                 st.session_state.auto_insight = call_llm(ctx, instruction)
         
-        # HTML para o Header Dourado
+        # Header Dourado
         st.markdown(f"""
         <div style="background:#0f100a; border:1px solid #2a2a1e; border-bottom:none; padding:15px; border-radius:8px 8px 0 0; margin-bottom:-20px;">
             <div style="font-family:monospace; color:#e8a838; font-size:0.7rem; text-transform:uppercase; border-bottom:1px solid #2a2a1e; padding-bottom:5px;">
@@ -121,15 +131,11 @@ with col_right:
         </div>
         """, unsafe_allow_html=True)
         
-        # Caixa de conteúdo (Texto da IA)
         with st.container(border=True):
             st.markdown(st.session_state.auto_insight)
     else:
-        st.info("Feed empty. Awaiting signals for strategic analysis.")
+        st.info("Feed empty. Awaiting signals.")
 
-    # Mantém as abas abaixo
-    tab1, tab2, tab3 = st.tabs(["Dispatch", "Thinker Partner", "Meta-Analysis"])
-    # ... resto do seu código (Dispatch, etc)
 
 
     
