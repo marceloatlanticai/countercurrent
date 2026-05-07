@@ -92,27 +92,42 @@ with col_left:
                 </a>
                 """, unsafe_allow_html=True)
 
-# --- COLUNA DIREITA (INTELIGÊNCIA COM FIX DE DIAGRAMAÇÃO) ---
+# ══════════════════════════════════════════════════════════════════════════════
+# COLUNA DIREITA: Strategic Intelligence (v3.10 - 3+3 PROMPT FIX)
+# ══════════════════════════════════════════════════════════════════════════════
 with col_right:
     st.subheader("Strategic Intelligence")
+    
     if signals:
         if "auto_insight" not in st.session_state:
-            with st.spinner("Analyzing..."):
-                ctx = "\n".join([f"- {s.get('title')}" for s in signals[:15]])
-                prompt = "Identify 3 Cultural Shifts and 3 Countercurrent Shifts. Style: Hemingway. Use markdown bold for headlines."
-                st.session_state.auto_insight = call_llm(ctx, prompt)
+            with st.spinner("Deep scanning cultural currents..."):
+                ctx = "\n".join([f"- {s.get('title')}" for s in signals[:20]])
+                
+                # Prompt reforçado para garantir a estrutura 3+3
+                instruction = (
+                    "Analyze these signals and provide exactly two sections:\n"
+                    "1. CULTURAL SHIFTS: Identify 3 major current trends.\n"
+                    "2. COUNTERCURRENT SHIFTS: Identify 3 contrarian provocations or hidden shifts.\n\n"
+                    "Style: Hemingway. Professional, punchy, brief. Use markdown bold for titles."
+                )
+                st.session_state.auto_insight = call_llm(ctx, instruction)
         
-        # O segredo para não quebrar: Header e Conteúdo em blocos HTML separados, mas visualmente unidos
+        # HTML para o Header Dourado
         st.markdown(f"""
-        <div style="background:#0f100a; border:1px solid #2a2a1e; border-bottom:none; padding:20px 20px 0px 20px; border-radius:8px 8px 0 0;">
+        <div style="background:#0f100a; border:1px solid #2a2a1e; border-bottom:none; padding:15px; border-radius:8px 8px 0 0; margin-bottom:-20px;">
             <div style="font-family:monospace; color:#e8a838; font-size:0.7rem; text-transform:uppercase; border-bottom:1px solid #2a2a1e; padding-bottom:5px;">
                 ⚡ Automated Intelligence Report
             </div>
         </div>
         """, unsafe_allow_html=True)
         
-        with st.container(border=True): # Usando o container nativo para envolver o texto da IA
+        # Caixa de conteúdo (Texto da IA)
+        with st.container(border=True):
             st.markdown(st.session_state.auto_insight)
+    else:
+        st.info("Feed empty. Awaiting signals for strategic analysis.")
+
+
     
     # Abas
     tab1, tab2, tab3 = st.tabs(["Dispatch", "Thinker Partner", "Meta-Analysis"])
