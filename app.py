@@ -10,48 +10,33 @@ load_dotenv()
 
 st.set_page_config(page_title="Countercurrent.ai", layout="wide", initial_sidebar_state="collapsed")
 
-# --- CSS DEFINITIVO PARA LAYOUT E ROLAGEM ---
+# --- CSS PARA ESTÉTICA ---
 st.markdown("""
 <style>
     .stApp { background-color: #0a0a0a; }
-    
-    /* ESTE BLOCO FORÇA A ROLAGEM NA COLUNA DA ESQUERDA */
-    [data-testid="stVerticalBlock"] > div:nth-child(1) > [data-testid="stVerticalBlock"] {
-        max-height: 80vh !important;
-        overflow-y: auto !important;
-        padding-right: 10px;
-    }
-    
     .signal-card {
         background: #111; border: 1px solid #222;
         padding: 12px; border-radius: 6px; margin-bottom: 10px;
     }
-    
     .signal-source { color: #e8a838; font-family: monospace; font-size: 0.65rem; text-transform: uppercase; }
     .signal-title { font-weight: bold; color: #f0ebe2; font-size: 0.9rem; }
-    
     .insight-box {
         background: #0f100a; border: 1px solid #2a2a1e;
         padding: 20px; border-radius: 8px; margin-bottom: 15px;
     }
-
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- FUNÇÃO LLM (ROTA ULTRA-ESTÁVEL) ---
+# --- FUNÇÃO LLM (ROTA ESTÁVEL) ---
 def call_llm(user_query, system_instruction):
     api_key = os.environ.get("GOOGLE_API_KEY")
     if not api_key: return "⚠️ API_KEY faltando."
     
-    # Mudamos para a rota v1 (estável) e o modelo gemini-pro que é universal
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={api_key}"
+    # Tentativa 1: Gemini 1.5 Flash (Mais provável de funcionar em contas novas)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     
     payload = {
-        "contents": [{
-            "parts": [{"text": f"System: {system_instruction}\n\nUser: {user_query}"}]
-        }]
+        "contents": [{"parts": [{"text": f"System: {system_instruction}\n\nUser: {user_query}"}]}]
     }
     
     try:
@@ -60,13 +45,13 @@ def call_llm(user_query, system_instruction):
         if 'candidates' in data:
             return data['candidates'][0]['content']['parts'][0]['text']
         else:
-            # Caso o Pro falhe, tentamos a última cartada com o nome genérico do Flash
-            url_alt = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-            response = requests.post(url_alt, json=payload, timeout=20)
-            data = response.json()
-            return data['candidates'][0]['content']['parts'][0]['text']
+            # Tentativa 2: Gemini Pro (Backup)
+            url_pro = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
+            resp_pro = requests.post(url_pro, json=payload, timeout=20)
+            data_pro = resp_pro.json()
+            return data_pro['candidates'][0]['content']['parts'][0]['text']
     except Exception as e:
-        return f"⚠️ Erro de conexão ou API Key inválida: {str(e)}"
+        return f"⚠️ Erro de conexão: {str(e)}"
 
 def load_signals():
     path = "data/signals.jsonl"
@@ -82,7 +67,7 @@ def load_signals():
 
 # --- UI ---
 st.title("⟳ Countercurrent.ai")
-st.caption("Wire Room v3.1 — Stable Engine")
+st.caption("Wire Room v3.2 — Final Stability")
 
 signals = load_signals()
 col_left, col_right = st.columns([1, 1], gap="large")
@@ -98,24 +83,26 @@ with col_left:
         if selected_source != "All Networks":
             filtered = [s for s in signals if s.get("source") == selected_source]
         
-        # Lógica Mixed
-        if selected_source == "All Networks":
-            by_src = {}
-            for s in filtered:
-                src = s.get("source", "web"); by_src.setdefault(src, []).append(s)
-            display_list = [i for sub in zip_longest(*by_source.values()) for i in sub if i] # Corrigido aqui
-        else:
-            display_list = filtered
+        # CONTAINER COM SCROLL NATIVO (Garante a barra de rolagem)
+        with st.container(height=600):
+            if selected_source == "All Networks":
+                by_src = {}
+                for s in filtered:
+                    src = s.get("source", "web")
+                    by_src.setdefault(src, []).append(s)
+                # CORREÇÃO AQUI: by_src em todos os lugares
+                display_list = [i for sub in zip_longest(*by_src.values()) for i in sub if i]
+            else:
+                display_list = filtered
 
-        # Listagem (A rolagem agora é automática pelo CSS do VerticalBlock)
-        for sig in display_list[:50]:
-            st.markdown(f"""
-            <div class="signal-card">
-                <div class="signal-source">{sig.get('source')} | {sig.get('client_tag', 'NYL')}</div>
-                <div class="signal-title">{sig.get('title')}</div>
-                <div style="color:#888; font-size:0.8rem; margin-top:5px;">{sig.get('content', '')[:160]}...</div>
-            </div>
-            """, unsafe_allow_html=True)
+            for sig in display_list[:60]:
+                st.markdown(f"""
+                <div class="signal-card">
+                    <div class="signal-source">{sig.get('source')} | {sig.get('client_tag', 'NYL')}</div>
+                    <div class="signal-title">{sig.get('title')}</div>
+                    <div style="color:#888; font-size:0.8rem; margin-top:5px;">{sig.get('content', '')[:160]}...</div>
+                </div>
+                """, unsafe_allow_html=True)
 
 with col_right:
     st.subheader("Strategic Intelligence")
@@ -123,7 +110,7 @@ with col_right:
     st.markdown('<div class="insight-box">', unsafe_allow_html=True)
     if signals:
         if "auto_insight" not in st.session_state:
-            with st.spinner("Analyzing..."):
+            with st.spinner("Analyzing signals..."):
                 context = "\n".join([f"- {s.get('title')}" for s in signals[:15]])
                 st.session_state.auto_insight = call_llm(
                     f"Analyze for NY Liberty: {context}", 
@@ -134,7 +121,7 @@ with col_right:
 
     tab1, tab2, tab3 = st.tabs(["Dispatch", "Thinker Partner", "Meta-Analysis"])
     with tab1:
-        topic = st.text_input("Topic", "WNBA x Pinterest Trends")
+        topic = st.text_input("Topic", "WNBA Trends")
         if st.button("Run Dispatch"):
             st.markdown(call_llm(topic, "Style: Hemingway. Strategic Countercurrent."))
     
@@ -144,4 +131,4 @@ with col_right:
 
     with tab3:
         st.markdown("**Meta-Analysis Mode**")
-        st.button("Cross-Reference Patterns")
+        st.button("Run Patterns")
