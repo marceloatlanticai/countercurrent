@@ -127,6 +127,10 @@ with col_right:
     else:
         st.info("Feed empty. Awaiting signals for strategic analysis.")
 
+    # Mantém as abas abaixo
+    tab1, tab2, tab3 = st.tabs(["Dispatch", "Thinker Partner", "Meta-Analysis"])
+    # ... resto do seu código (Dispatch, etc)
+
 
     
     # Abas
