@@ -27,31 +27,45 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- FUNÇÃO LLM (ROTA ESTÁVEL) ---
+# --- FUNÇÃO LLM (VERSÃO ULTRA-ROBUSTA) ---
 def call_llm(user_query, system_instruction):
     api_key = os.environ.get("GOOGLE_API_KEY")
-    if not api_key: return "⚠️ API_KEY faltando."
+    if not api_key: return "⚠️ API_KEY faltando no arquivo .env"
     
-    # Tentativa 1: Gemini 1.5 Flash (Mais provável de funcionar em contas novas)
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    # Rota v1 estável
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
     
     payload = {
-        "contents": [{"parts": [{"text": f"System: {system_instruction}\n\nUser: {user_query}"}]}]
+        "contents": [{
+            "parts": [{"text": f"Instruction: {system_instruction}\n\nContext/Query: {user_query}"}]
+        }],
+        "safetySettings": [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+        ],
+        "generationConfig": {
+            "temperature": 0.7,
+            "maxOutputTokens": 800
+        }
     }
     
     try:
         response = requests.post(url, json=payload, timeout=20)
         data = response.json()
-        if 'candidates' in data:
-            return data['candidates'][0]['content']['parts'][0]['text']
-        else:
-            # Tentativa 2: Gemini Pro (Backup)
-            url_pro = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
-            resp_pro = requests.post(url_pro, json=payload, timeout=20)
-            data_pro = resp_pro.json()
-            return data_pro['candidates'][0]['content']['parts'][0]['text']
+        
+        # Se houver erro estrutural na resposta
+        if 'error' in data:
+            return f"⚠️ Erro do Google: {data['error']['message']}"
+            
+        # Se a resposta foi bloqueada por segurança (mesmo com os filtros em NONE)
+        if 'candidates' not in data or not data['candidates']:
+            return f"⚠️ Resposta bloqueada ou vazia. Motivo: {data.get('promptFeedback', {}).get('blockReason', 'Desconhecido')}"
+        
+        return data['candidates'][0]['content']['parts'][0]['text']
     except Exception as e:
-        return f"⚠️ Erro de conexão: {str(e)}"
+        return f"⚠️ Falha técnica: {str(e)}"
 
 def load_signals():
     path = "data/signals.jsonl"
@@ -67,7 +81,7 @@ def load_signals():
 
 # --- UI ---
 st.title("⟳ Countercurrent.ai")
-st.caption("Wire Room v3.2 — Final Stability")
+st.caption("Wire Room v3.3 — Debug Mode")
 
 signals = load_signals()
 col_left, col_right = st.columns([1, 1], gap="large")
@@ -83,14 +97,13 @@ with col_left:
         if selected_source != "All Networks":
             filtered = [s for s in signals if s.get("source") == selected_source]
         
-        # CONTAINER COM SCROLL NATIVO (Garante a barra de rolagem)
-        with st.container(height=600):
+        # CONTAINER COM SCROLL NATIVO
+        with st.container(height=650):
             if selected_source == "All Networks":
                 by_src = {}
                 for s in filtered:
                     src = s.get("source", "web")
                     by_src.setdefault(src, []).append(s)
-                # CORREÇÃO AQUI: by_src em todos os lugares
                 display_list = [i for sub in zip_longest(*by_src.values()) for i in sub if i]
             else:
                 display_list = filtered
@@ -110,11 +123,11 @@ with col_right:
     st.markdown('<div class="insight-box">', unsafe_allow_html=True)
     if signals:
         if "auto_insight" not in st.session_state:
-            with st.spinner("Analyzing signals..."):
+            with st.spinner("Decoding signals..."):
                 context = "\n".join([f"- {s.get('title')}" for s in signals[:15]])
                 st.session_state.auto_insight = call_llm(
-                    f"Analyze for NY Liberty: {context}", 
-                    "You are a trend spotter. Style: Hemingway. Give 2 currents and 3 counter-provocations."
+                    context, 
+                    "You are a trend spotter for NY Liberty. Style: Hemingway. Give 2 currents and 3 counter-provocations."
                 )
         st.markdown(st.session_state.auto_insight)
     st.markdown('</div>', unsafe_allow_html=True)
@@ -123,7 +136,9 @@ with col_right:
     with tab1:
         topic = st.text_input("Topic", "WNBA Trends")
         if st.button("Run Dispatch"):
-            st.markdown(call_llm(topic, "Style: Hemingway. Strategic Countercurrent."))
+            with st.spinner("Analyzing..."):
+                res = call_llm(topic, "Style: Hemingway. Strategic Countercurrent.")
+                st.markdown(res)
     
     with tab2:
         st.text_input("Interrogate Lake", key="lake_chat")
@@ -131,4 +146,5 @@ with col_right:
 
     with tab3:
         st.markdown("**Meta-Analysis Mode**")
-        st.button("Run Patterns")
+        if st.button("Run Patterns"):
+            st.write("Análise de padrões habilitada.")
