@@ -37,7 +37,7 @@ if "logged_in" not in st.session_state:
 if "username" not in st.session_state:
     st.session_state.username = None
 
-# 🧠 BANCO DE DADOS TEMPORÁRIO (Memória dos Projetos)
+# BANCO DE DADOS TEMPORÁRIO (Memória dos Projetos)
 if "project_data" not in st.session_state:
     st.session_state.project_data = {
         "Haypp": [],
@@ -45,6 +45,16 @@ if "project_data" not in st.session_state:
         "Pinterest": [],
         "Salvie": [],
         "Oceano Ozul": []
+    }
+
+# Dicionário para guardar os Briefings de cada projeto (Wireframe do Pat)
+if "project_briefs" not in st.session_state:
+    st.session_state.project_briefs = {
+        "Haypp": "Search for answers regarding nicotine pouch market disruption and alternative cultural patterns.",
+        "Likepost": "Analyze micro-influencer exhaustion and the friction against traditional aesthetic feeds.",
+        "Pinterest": "Understand the shift toward chaotic curations, 'Anti-Athleisure' trends, and private digital mood boards.",
+        "Salvie": "Investigate underground wellness movements and non-corporate lifestyle signals.",
+        "Oceano Ozul": "Explore counter-cultural environmental movements and alternative sustainability narratives."
     }
 
 # ==========================================
@@ -113,7 +123,6 @@ if selected_project == "Master Dashboard":
         st.subheader("🌐 Master Currents Feed")
         st.caption("Live signals from TikTok, Reddit, Pinterest, and BlueSky.")
         
-        # Sinais simulados (adicionei links reais do Google/TikTok/Trends como exemplo)
         signals = [
             {"category": "Cultural Tension", "title": "The rise of Anti-Athleisure in metropolitan centers. Consumers are trading stretch yoga pants for structural denim and tailoring as a subtle rejection of constant corporate-casual casualness.", "link": "https://trends.google.com"},
             {"category": "Competitor Activity", "title": "Nike launches quiet-luxury capsule collection with zero logos. The industry giant pivots away from loud performance emblems to secure high-fashion real estate.", "link": "https://www.tiktok.com"},
@@ -124,7 +133,7 @@ if selected_project == "Master Dashboard":
         for i, sig in enumerate(signals):
             with st.container(border=True):
                 st.markdown(f"**[{sig['category']}]**")
-                st.write(sig['title']) # Exibe o texto completo sem cortes
+                st.write(sig['title'])
                 st.markdown(f"[View Live Source]({sig['link']})")
                 
                 col_btn1, col_btn2 = st.columns([1, 1])
@@ -133,20 +142,14 @@ if selected_project == "Master Dashboard":
                 with col_btn2:
                     st.write("") 
                     if st.button("📌 Add to Desk", key=f"btn_{i}"):
-                        # 💾 AGORA SALVA O LINK JUNTO COM O DADO COMPLETO
                         st.session_state.project_data[target_project].append({
                             "category": sig["category"],
                             "title": sig["title"],
-                            "link": sig["link"], # Salvando o link real
+                            "link": sig["link"],
                             "timestamp": datetime.datetime.now().strftime("%H:%M:%S"),
                             "saved_by": st.session_state.username
                         })
-                        
-                        log_activity(
-                            st.session_state.username, 
-                            "curate_signal", 
-                            f"Added '{sig['title'][:25]}...' to {target_project} Desk"
-                        )
+                        log_activity(st.session_state.username, "curate_signal", f"Added '{sig['title'][:25]}...' to {target_project} Desk")
                         st.toast(f"Saved to {target_project}!")
 
     with col_right:
@@ -175,43 +178,73 @@ if selected_project == "Master Dashboard":
             st.warning("⏳ Future feature: Database connection.")
 
 # ==========================================
-# 5. PÁGINAS DOS PROJETOS ESPECÍFICOS (Ex: Pinterest)
+# 5. PÁGINAS DOS PROJETOS ESPECÍFICOS (EFEITO PAT)
 # ==========================================
 else:
-    st.subheader(f"💼 {selected_project} Research Desk")
-    st.write("*Here we detail objectives and outstanding questions we're trying to answer through listening and research.*")
-    
-    st.markdown("### 🗂️ Collected Data from Master Feed")
-    saved_items = st.session_state.project_data[selected_project]
-    
-    if len(saved_items) == 0:
-        st.info("No data collected from Master Feed yet. Go to Master Dashboard to curate some signals!")
-    else:
-        for item in saved_items:
-            with st.container(border=True):
-                st.markdown(f"**[{item['category']}]** — *Saved at {item['timestamp']} by {item['saved_by'].capitalize()}*")
-                
-                # 🛠️ AJUSTE AQUI: Texto completo exibido de forma limpa
-                st.write(item['title'])
-                
-                # 🛠️ AJUSTE AQUI: O link original agora aparece e funciona dentro do projeto!
-                st.markdown(f"[🔗 View Original Live Source]({item['link']})")
-    
+    # 📝 SEÇÃO: THE BRIEF (Conforme desenhado pelo Pat)
+    with st.container(border=True):
+        st.markdown("### 📋 The Brief")
+        st.caption("Objectives and outstanding questions we're trying to answer through listening and research.")
+        # Permite que a equipe altere o briefing do projeto e salve
+        current_brief = st.text_area("Project Objectives:", value=st.session_state.project_briefs[selected_project], key="brief_area")
+        if st.button("Update Project Brief"):
+            st.session_state.project_briefs[selected_project] = current_brief
+            log_activity(st.session_state.username, "update_brief", f"Updated brief for {selected_project}")
+            st.toast("Brief updated successfully!")
+
     st.markdown("---")
     
-    # Espaço para Notas Manuais
-    with st.container(border=True):
-        st.markdown("### 📝 Project Notes & Rating")
-        note_input = st.text_area("Add manual note or observation to this project:")
-        rating = st.slider("Delineate importance (Rating):", 1, 5, 3)
+    # Criando duas colunas na Mesa de Trabalho do Projeto (Layout limpo)
+    col_proj_left, col_proj_right = st.columns([1, 1])
+    
+    with col_proj_left:
+        st.markdown("### 🗂️ Research Desk (Collected Data)")
+        st.caption("Data points and references curated from the Master Feed.")
+        saved_items = st.session_state.project_data[selected_project]
         
-        if st.button("Save Entry to Project Desk"):
-            log_activity(
-                st.session_state.username, 
-                "add_project_note", 
-                f"Project: {selected_project} | Rating: {rating} | Note: {note_input[:30]}..."
-            )
-            st.success("Data successfully recorded into the project workflow!")
+        if len(saved_items) == 0:
+            st.info("No data collected from Master Feed yet. Go to Master Dashboard to curate some signals!")
+        else:
+            for item in saved_items:
+                with st.container(border=True):
+                    st.markdown(f"**[{item['category']}]** — *Curated by {item['saved_by'].capitalize()}*")
+                    st.write(item['title'])
+                    st.markdown(f"[🔗 View Original Live Source]({item['link']})")
+        
+        st.markdown("---")
+        # Espaço para Notas Manuais e Avaliação por Estrelas/Rating
+        with st.container(border=True):
+            st.markdown("### ✍️ Add Manual Insight & Rating")
+            note_input = st.text_area("Add custom observation to this desk:", placeholder="Type human interpretation here...")
+            rating = st.slider("Delineate data importance (Rating):", 1, 5, 3)
+            
+            if st.button("Save Entry to Project Desk"):
+                log_activity(
+                    st.session_state.username, 
+                    "add_project_note", 
+                    f"Project: {selected_project} | Rating: {rating} | Note: {note_input[:30]}..."
+                )
+                st.success("Insight added to the research workflow!")
+
+    with col_proj_right:
+        # 🧠 SEÇÃO: CURRENTS SUMMARY & WHITESPACES (Módulo de IA para Clientes Externos)
+        st.markdown("### 🎯 Currents Summary & Whitespaces")
+        st.caption("Drag and drop logic: Click below to synthesize the desk's collected signals into countercurrent suggestions.")
+        
+        if st.button(f"🔮 Run AI Synthesis for {selected_project}", use_container_width=True):
+            if len(saved_items) == 0:
+                st.warning("Cannot synthesize. The Research Desk is currently empty. Add signals first!")
+            else:
+                log_activity(st.session_state.username, "run_project_synthesis", f"Generated strategic summary for {selected_project}")
+                
+                with st.spinner("Analyzing team curation and brief patterns..."):
+                    st.markdown("#### 🔍 Identified Whitespace")
+                    st.info(f"Based on the {len(saved_items)} signals saved by your team, there is an unexploited gap in subverting traditional category codes. Competitors are heavily focusing on performance, leaving room for an aesthetic counter-narrative.")
+                    
+                    with st.container(border=True):
+                        st.markdown("#### 💡 Countercurrent Suggestion (External Facing)")
+                        st.write(f"**Strategy Proposal for {selected_project}:** Launch a hyper-limited 'Ghost Drop' that offers zero functional explanations, relying purely on cultural intrigue and community gatekeeping. This directly addresses the tension found in your team's research desk.")
+                        st.caption("✨ Ready to share with clients.")
 
 # ==========================================
 # 6. HISTÓRICO DE EDIÇÕES / AUDIT LOG
