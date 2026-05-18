@@ -113,17 +113,18 @@ if selected_project == "Master Dashboard":
         st.subheader("🌐 Master Currents Feed")
         st.caption("Live signals from TikTok, Reddit, Pinterest, and BlueSky.")
         
+        # Sinais simulados (adicionei links reais do Google/TikTok/Trends como exemplo)
         signals = [
-            {"category": "Cultural Tension", "title": "The rise of Anti-Athleisure in metropolitan centers", "link": "#"},
-            {"category": "Competitor Activity", "title": "Nike launches quiet-luxury capsule collection", "link": "#"},
-            {"category": "Consumer Barrier Identified", "title": "Gen-Z rejecting automated customer service in luxury retail", "link": "#"},
-            {"category": "Company Update/Earnings", "title": "Key luxury holding groups report 4% drop in traditional retail traffic", "link": "#"}
+            {"category": "Cultural Tension", "title": "The rise of Anti-Athleisure in metropolitan centers. Consumers are trading stretch yoga pants for structural denim and tailoring as a subtle rejection of constant corporate-casual casualness.", "link": "https://trends.google.com"},
+            {"category": "Competitor Activity", "title": "Nike launches quiet-luxury capsule collection with zero logos. The industry giant pivots away from loud performance emblems to secure high-fashion real estate.", "link": "https://www.tiktok.com"},
+            {"category": "Consumer Barrier Identified", "title": "Gen-Z rejecting automated customer service in luxury retail. Social proof shows a massive drop in satisfaction when high-ticket purchases are handled by bots instead of experts.", "link": "https://www.reddit.com"},
+            {"category": "Company Update/Earnings", "title": "Key luxury holding groups report a 4% drop in traditional brick-and-mortar retail traffic, while underground digital private networks double their active membership.", "link": "https://www.pinterest.com"}
         ]
         
         for i, sig in enumerate(signals):
             with st.container(border=True):
                 st.markdown(f"**[{sig['category']}]**")
-                st.write(sig['title'])
+                st.write(sig['title']) # Exibe o texto completo sem cortes
                 st.markdown(f"[View Live Source]({sig['link']})")
                 
                 col_btn1, col_btn2 = st.columns([1, 1])
@@ -132,10 +133,11 @@ if selected_project == "Master Dashboard":
                 with col_btn2:
                     st.write("") 
                     if st.button("📌 Add to Desk", key=f"btn_{i}"):
-                        # 💾 SALVA O DADO NA MEMÓRIA DO PROJETO SELECIONADO
+                        # 💾 AGORA SALVA O LINK JUNTO COM O DADO COMPLETO
                         st.session_state.project_data[target_project].append({
                             "category": sig["category"],
                             "title": sig["title"],
+                            "link": sig["link"], # Salvando o link real
                             "timestamp": datetime.datetime.now().strftime("%H:%M:%S"),
                             "saved_by": st.session_state.username
                         })
@@ -179,7 +181,6 @@ else:
     st.subheader(f"💼 {selected_project} Research Desk")
     st.write("*Here we detail objectives and outstanding questions we're trying to answer through listening and research.*")
     
-    # 📥 EXIBE OS DADOS QUE FORAM CORDADOS/SALVOS DO MASTER DASHBOARD
     st.markdown("### 🗂️ Collected Data from Master Feed")
     saved_items = st.session_state.project_data[selected_project]
     
@@ -189,11 +190,16 @@ else:
         for item in saved_items:
             with st.container(border=True):
                 st.markdown(f"**[{item['category']}]** — *Saved at {item['timestamp']} by {item['saved_by'].capitalize()}*")
+                
+                # 🛠️ AJUSTE AQUI: Texto completo exibido de forma limpa
                 st.write(item['title'])
+                
+                # 🛠️ AJUSTE AQUI: O link original agora aparece e funciona dentro do projeto!
+                st.markdown(f"[🔗 View Original Live Source]({item['link']})")
     
     st.markdown("---")
     
-    # Espaço para Notas Manuais (O que já tínhamos feito)
+    # Espaço para Notas Manuais
     with st.container(border=True):
         st.markdown("### 📝 Project Notes & Rating")
         note_input = st.text_area("Add manual note or observation to this project:")
