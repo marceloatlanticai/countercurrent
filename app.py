@@ -47,7 +47,6 @@ if "project_data" not in st.session_state:
         "Oceano Ozul": []
     }
 
-# Dicionário para guardar os Briefings de cada projeto (Wireframe do Pat)
 if "project_briefs" not in st.session_state:
     st.session_state.project_briefs = {
         "Haypp": "Search for answers regarding nicotine pouch market disruption and alternative cultural patterns.",
@@ -119,39 +118,64 @@ st.title(f"{selected_project}")
 if selected_project == "Master Dashboard":
     col_left, col_right = st.columns([1, 1])
     
+    # --- COLUNA ESQUERDA: MASTER CURRENTS FEED (COM FILTROS E ROLAGEM) ---
     with col_left:
         st.subheader("🌐 Master Currents Feed")
-        st.caption("Live signals from TikTok, Reddit, Pinterest, and BlueSky.")
         
-        signals = [
-            {"category": "Cultural Tension", "title": "The rise of Anti-Athleisure in metropolitan centers. Consumers are trading stretch yoga pants for structural denim and tailoring as a subtle rejection of constant corporate-casual casualness.", "link": "https://trends.google.com"},
-            {"category": "Competitor Activity", "title": "Nike launches quiet-luxury capsule collection with zero logos. The industry giant pivots away from loud performance emblems to secure high-fashion real estate.", "link": "https://www.tiktok.com"},
-            {"category": "Consumer Barrier Identified", "title": "Gen-Z rejecting automated customer service in luxury retail. Social proof shows a massive drop in satisfaction when high-ticket purchases are handled by bots instead of experts.", "link": "https://www.reddit.com"},
-            {"category": "Company Update/Earnings", "title": "Key luxury holding groups report a 4% drop in traditional brick-and-mortar retail traffic, while underground digital private networks double their active membership.", "link": "https://www.pinterest.com"}
-        ]
-        
-        for i, sig in enumerate(signals):
-            with st.container(border=True):
-                st.markdown(f"**[{sig['category']}]**")
-                st.write(sig['title'])
-                st.markdown(f"[View Live Source]({sig['link']})")
-                
-                col_btn1, col_btn2 = st.columns([1, 1])
-                with col_btn1:
-                    target_project = st.selectbox("Send to project:", ["Haypp", "Likepost", "Pinterest", "Salvie", "Oceano Ozul"], key=f"sel_{i}")
-                with col_btn2:
-                    st.write("") 
-                    if st.button("📌 Add to Desk", key=f"btn_{i}"):
-                        st.session_state.project_data[target_project].append({
-                            "category": sig["category"],
-                            "title": sig["title"],
-                            "link": sig["link"],
-                            "timestamp": datetime.datetime.now().strftime("%H:%M:%S"),
-                            "saved_by": st.session_state.username
-                        })
-                        log_activity(st.session_state.username, "curate_signal", f"Added '{sig['title'][:25]}...' to {target_project} Desk")
-                        st.toast(f"Saved to {target_project}!")
+        # 🛠️ NOVO: Seletor de Origem/Rede Social (Como você tinha antes)
+        source_filter = st.multiselect(
+            "Filter by Platform Source:",
+            options=["All Networks", "TikTok", "Reddit", "Pinterest", "BlueSky"],
+            default=["All Networks"]
+        )
 
+        # Grande base de dados expandida para simular o volume real das redes
+        all_signals = [
+            {"source": "TikTok", "category": "Cultural Tension", "title": "The rise of Anti-Athleisure in metropolitan centers. Consumers are trading stretch yoga pants for structural denim as a rejection of constant corporate-casualness.", "link": "https://www.tiktok.com"},
+            {"source": "Reddit", "category": "Competitor Activity", "title": "Nike launches quiet-luxury capsule collection with zero logos. The giant pivots away from loud performance emblems to secure high-fashion real estate.", "link": "https://www.reddit.com"},
+            {"source": "Pinterest", "category": "Consumer Barrier Identified", "title": "Gen-Z rejecting automated customer service in luxury retail. Social proof shows a massive drop in satisfaction when high-ticket purchases are handled by bots.", "link": "https://www.pinterest.com"},
+            {"source": "BlueSky", "category": "Company Update/Earnings", "title": "Key luxury holding groups report a 4% drop in brick-and-mortar retail traffic, while private alternative digital networks double active membership.", "link": "https://bsky.app"},
+            {"source": "TikTok", "category": "Cultural Tension", "title": "Subversive basicism: Young consumers intentionally buying unbranded, standard wholesale blanks to protest hyper-fast fashion drops.", "link": "https://www.tiktok.com"},
+            {"source": "Reddit", "category": "Consumer Barrier Identified", "title": "Users on r/frugal luxury are actively mapping out how to remove designer logos using seam rippers to achieve 'stealth utility'.", "link": "https://www.reddit.com"},
+            {"source": "Pinterest", "category": "Cultural Tension", "title": "Chaos moodboarding: A shift away from clean 'aesthetic' grids toward messy, scanned-in notebook pages and brutalist digital layouts.", "link": "https://www.pinterest.com"},
+            {"source": "BlueSky", "category": "Competitor Activity", "title": "Independent luxury labels are completely erasing their Instagram accounts, migrating communications entirely to encrypted Discord servers.", "link": "https://bsky.app"},
+            {"source": "TikTok", "category": "Cultural Tension", "title": "The 'Slow Sports' movement: Gen-Z creators glorifying local, non-competitive sports clubs over multi-billion dollar broadcasting events.", "link": "https://www.tiktok.com"}
+        ]
+
+        # Lógica de Filtragem baseada na seleção do usuário
+        if "All Networks" in source_filter or not source_filter:
+            filtered_signals = all_signals
+        else:
+            filtered_signals = [s for s in all_signals if s["source"] in source_filter]
+
+        st.caption(f"Showing {len(filtered_signals)} live signals based on your platform filters.")
+
+        # 🛠️ NOVO: BARRA DE ROLAGEM INDEPENDENTE (height=550 fixa a altura e cria o scroll do feed)
+        with st.container(height=550):
+            for i, sig in enumerate(filtered_signals):
+                with st.container(border=True):
+                    # Tag da Rede + Categoria do Pat
+                    st.markdown(f"📱 **{sig['source']}** | *{sig['category']}*")
+                    st.write(sig['title'])
+                    st.markdown(f"[View Live Source]({sig['link']})")
+                    
+                    col_btn1, col_btn2 = st.columns([1, 1])
+                    with col_btn1:
+                        target_project = st.selectbox("Send to project:", ["Haypp", "Likepost", "Pinterest", "Salvie", "Oceano Ozul"], key=f"sel_{i}")
+                    with col_btn2:
+                        st.write("") 
+                        if st.button("📌 Add to Desk", key=f"btn_{i}"):
+                            st.session_state.project_data[target_project].append({
+                                "category": f"{sig['source']} - {sig['category']}",
+                                "title": sig["title"],
+                                "link": sig["link"],
+                                "timestamp": datetime.datetime.now().strftime("%H:%M:%S"),
+                                "saved_by": st.session_state.username
+                            })
+                            log_activity(st.session_state.username, "curate_signal", f"[{sig['source']}] Added to {target_project} Desk")
+                            st.toast(f"Saved to {target_project}!")
+
+    # --- COLUNA DIREITA: STRATEGIC INTELLIGENCE ---
     with col_right:
         st.subheader("🧠 Strategic Intelligence")
         with st.container(border=True):
@@ -178,14 +202,12 @@ if selected_project == "Master Dashboard":
             st.warning("⏳ Future feature: Database connection.")
 
 # ==========================================
-# 5. PÁGINAS DOS PROJETOS ESPECÍFICOS (EFEITO PAT)
+# 5. PÁGINAS DOS PROJETOS ESPECÍFICOS
 # ==========================================
 else:
-    # 📝 SEÇÃO: THE BRIEF (Conforme desenhado pelo Pat)
     with st.container(border=True):
         st.markdown("### 📋 The Brief")
         st.caption("Objectives and outstanding questions we're trying to answer through listening and research.")
-        # Permite que a equipe altere o briefing do projeto e salve
         current_brief = st.text_area("Project Objectives:", value=st.session_state.project_briefs[selected_project], key="brief_area")
         if st.button("Update Project Brief"):
             st.session_state.project_briefs[selected_project] = current_brief
@@ -193,13 +215,10 @@ else:
             st.toast("Brief updated successfully!")
 
     st.markdown("---")
-    
-    # Criando duas colunas na Mesa de Trabalho do Projeto (Layout limpo)
     col_proj_left, col_proj_right = st.columns([1, 1])
     
     with col_proj_left:
         st.markdown("### 🗂️ Research Desk (Collected Data)")
-        st.caption("Data points and references curated from the Master Feed.")
         saved_items = st.session_state.project_data[selected_project]
         
         if len(saved_items) == 0:
@@ -212,39 +231,27 @@ else:
                     st.markdown(f"[🔗 View Original Live Source]({item['link']})")
         
         st.markdown("---")
-        # Espaço para Notas Manuais e Avaliação por Estrelas/Rating
         with st.container(border=True):
             st.markdown("### ✍️ Add Manual Insight & Rating")
-            note_input = st.text_area("Add custom observation to this desk:", placeholder="Type human interpretation here...")
+            note_input = st.text_area("Add custom observation to this desk:")
             rating = st.slider("Delineate data importance (Rating):", 1, 5, 3)
-            
             if st.button("Save Entry to Project Desk"):
-                log_activity(
-                    st.session_state.username, 
-                    "add_project_note", 
-                    f"Project: {selected_project} | Rating: {rating} | Note: {note_input[:30]}..."
-                )
+                log_activity(st.session_state.username, "add_project_note", f"Project: {selected_project} | Rating: {rating}")
                 st.success("Insight added to the research workflow!")
 
     with col_proj_right:
-        # 🧠 SEÇÃO: CURRENTS SUMMARY & WHITESPACES (Módulo de IA para Clientes Externos)
         st.markdown("### 🎯 Currents Summary & Whitespaces")
-        st.caption("Drag and drop logic: Click below to synthesize the desk's collected signals into countercurrent suggestions.")
-        
         if st.button(f"🔮 Run AI Synthesis for {selected_project}", use_container_width=True):
             if len(saved_items) == 0:
-                st.warning("Cannot synthesize. The Research Desk is currently empty. Add signals first!")
+                st.warning("Cannot synthesize. The Research Desk is empty.")
             else:
                 log_activity(st.session_state.username, "run_project_synthesis", f"Generated strategic summary for {selected_project}")
-                
-                with st.spinner("Analyzing team curation and brief patterns..."):
+                with st.spinner("Analyzing team curation..."):
                     st.markdown("#### 🔍 Identified Whitespace")
-                    st.info(f"Based on the {len(saved_items)} signals saved by your team, there is an unexploited gap in subverting traditional category codes. Competitors are heavily focusing on performance, leaving room for an aesthetic counter-narrative.")
-                    
+                    st.info(f"Based on the {len(saved_items)} signals saved by your team, there is an unexploited gap in subverting traditional category codes.")
                     with st.container(border=True):
-                        st.markdown("#### 💡 Countercurrent Suggestion (External Facing)")
-                        st.write(f"**Strategy Proposal for {selected_project}:** Launch a hyper-limited 'Ghost Drop' that offers zero functional explanations, relying purely on cultural intrigue and community gatekeeping. This directly addresses the tension found in your team's research desk.")
-                        st.caption("✨ Ready to share with clients.")
+                        st.markdown("#### 💡 Countercurrent Suggestion")
+                        st.write(f"**Strategy Proposal for {selected_project}:** Launch a hyper-limited 'Ghost Drop' to capitalize on the user tensions mapped on your desk.")
 
 # ==========================================
 # 6. HISTÓRICO DE EDIÇÕES / AUDIT LOG
