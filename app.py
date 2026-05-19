@@ -27,15 +27,12 @@ def log_activity(username, action, details=""):
 
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "username" not in st.session_state: st.session_state.username = None
+if "custom_prompt_rules" not in st.session_state: st.session_state.custom_prompt_rules = ""
 
-# Inicializa o prompt customizado na sessão para não perder o texto ao atualizar a tela
-if "custom_prompt_rules" not in st.session_state:
-    st.session_state.custom_prompt_rules = ""
-
-# BANCO DE DADOS TEMPORÁRIO
+# BANCO DE DADOS TEMPORÁRIO (Incluindo Pinterest como Cliente)
 if "project_data" not in st.session_state:
     st.session_state.project_data = {
-        "Haypp": [], "Likepost": [], "Sallve": [], "Oceano Azul": []
+        "Haypp": [], "Likepost": [], "Sallve": [], "Oceano Azul": [], "Pinterest": []
     }
 
 if "project_briefs" not in st.session_state:
@@ -43,15 +40,15 @@ if "project_briefs" not in st.session_state:
         "Haypp": "Search for answers regarding nicotine pouch market disruption and alternative cultural patterns.",
         "Likepost": "Analyze micro-influencer exhaustion and the friction against traditional aesthetic feeds.",
         "Sallve": "Understand the shift toward chaotic curations, skin-intellectual trends, and clean beauty barriers.",
-        "Oceano Azul": "Explore counter-cultural environmental movements and alternative sustainability narratives."
+        "Oceano Azul": "Explore counter-cultural environmental movements and alternative sustainability narratives.",
+        "Pinterest": "Understand the shift toward chaotic curations, 'Anti-Athleisure' trends, and private digital mood boards as a brand ecosystem strategy."
     }
 
-# 🛠️ SOLUÇÃO B EVOLUÍDA: O motor de IA agora escuta as regras do "Tweak Master Prompt"
+# MOTOR DE CATEGORIZAÇÃO INTELIGENTE
 def get_ai_category(title, content):
     text = (title + " " + content).lower()
     rules = st.session_state.custom_prompt_rules.lower()
     
-    # Se o usuário digitou algo no Tweak Prompt, a IA prioriza o ajuste dele
     if rules and any(word in text for word in rules.split()):
         return "Custom Strategic Alert"
         
@@ -93,14 +90,15 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==========================================
-# 3. BARRA LATERAL (COM O TWEAK MASTER PROMPT DE VOLTA)
+# 3. BARRA LATERAL (Pinterest incluído como Cliente)
 # ==========================================
 st.sidebar.title("⟳ Countercurrent.ai")
 st.sidebar.write(f"Logged in as: **{st.session_state.username.capitalize()}**")
 st.sidebar.markdown("---")
 
 st.sidebar.subheader("📁 Ongoing Projects")
-project_options = ["Master Dashboard", "Haypp", "Likepost", "Sallve", "Oceano Azul"]
+# 🛠️ AJUSTE: Lista completa contendo Pinterest como cliente estratégico
+project_options = ["Master Dashboard", "Haypp", "Likepost", "Sallve", "Oceano Azul", "Pinterest"]
 selected_project = st.sidebar.selectbox("Select Research Desk:", project_options)
 
 if "current_project" not in st.session_state: st.session_state.current_project = "Master Dashboard"
@@ -110,7 +108,7 @@ if selected_project != st.session_state.current_project:
 
 st.sidebar.markdown("---")
 
-# 🛠️ RECUPERADO: Módulo do Prompt e Chat conforme o Wireframe do Pat
+# Módulo do Prompt e Chat
 st.sidebar.subheader("💬 Prompt & Chat Module")
 st.sidebar.info("Allows you to search, sort info by date/keywords, or tweak the master prompt.")
 custom_prompt_input = st.sidebar.text_area(
@@ -121,7 +119,7 @@ custom_prompt_input = st.sidebar.text_area(
 if st.sidebar.button("Update Engine Logic", use_container_width=True):
     st.session_state.custom_prompt_rules = custom_prompt_input
     log_activity(st.session_state.username, "tweak_prompt", f"Updated prompt rules: '{custom_prompt_input[:30]}...'")
-    st.sidebar.success("Engine logic updated for this session!")
+    st.sidebar.success("Engine logic updated!")
     st.rerun()
 
 st.sidebar.markdown("---")
@@ -165,7 +163,8 @@ if selected_project == "Master Dashboard":
                     
                     col_btn1, col_btn2 = st.columns([1, 1])
                     with col_btn1:
-                        target_project = st.selectbox("Send to project:", ["Haypp", "Likepost", "Sallve", "Oceano Azul"], key=f"sel_{i}")
+                        # 🛠️ AJUSTE: Destinos de envio atualizados com Pinterest na lista
+                        target_project = st.selectbox("Send to project:", ["Haypp", "Likepost", "Sallve", "Oceano Azul", "Pinterest"], key=f"sel_{i}")
                     with col_btn2:
                         st.write("")
                         if st.button("📌 Add to Desk", key=f"btn_{i}"):
