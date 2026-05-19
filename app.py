@@ -1,6 +1,7 @@
 import streamlit as st
 import datetime
 import json
+import os
 
 # ==========================================
 # CONFIGURAÇÃO DA PÁGINA
@@ -55,6 +56,19 @@ if "project_briefs" not in st.session_state:
         "Salvie": "Investigate underground wellness movements and non-corporate lifestyle signals.",
         "Oceano Ozul": "Explore counter-cultural environmental movements and alternative sustainability narratives."
     }
+
+# 🛠️ FUNÇÃO PARA CARREGAR OS DADOS REAIS DA INGESTÃO
+def load_ingested_signals():
+    path = "data/signals.jsonl"
+    if not os.path.exists(path):
+        return []
+    
+    signals = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                signals.append(json.loads(line.strip()))
+    return list(reversed(signals)) # Traz os mais recentes primeiro
 
 # ==========================================
 # 2. TELA DE LOGIN
@@ -118,46 +132,42 @@ st.title(f"{selected_project}")
 if selected_project == "Master Dashboard":
     col_left, col_right = st.columns([1, 1])
     
-    # --- COLUNA ESQUERDA: MASTER CURRENTS FEED (COM FILTROS E ROLAGEM) ---
+    # --- COLUNA ESQUERDA: MASTER CURRENTS FEED (REAL) ---
     with col_left:
         st.subheader("🌐 Master Currents Feed")
         
-        # 🛠️ NOVO: Seletor de Origem/Rede Social (Como você tinha antes)
         source_filter = st.multiselect(
             "Filter by Platform Source:",
-            options=["All Networks", "TikTok", "Reddit", "Pinterest", "BlueSky"],
+            options=["All Networks", "TikTok", "Reddit", "Pinterest", "BlueSky", "Twitter/X"],
             default=["All Networks"]
         )
 
-        # Grande base de dados expandida para simular o volume real das redes
-        all_signals = [
-            {"source": "TikTok", "category": "Cultural Tension", "title": "The rise of Anti-Athleisure in metropolitan centers. Consumers are trading stretch yoga pants for structural denim as a rejection of constant corporate-casualness.", "link": "https://www.tiktok.com"},
-            {"source": "Reddit", "category": "Competitor Activity", "title": "Nike launches quiet-luxury capsule collection with zero logos. The giant pivots away from loud performance emblems to secure high-fashion real estate.", "link": "https://www.reddit.com"},
-            {"source": "Pinterest", "category": "Consumer Barrier Identified", "title": "Gen-Z rejecting automated customer service in luxury retail. Social proof shows a massive drop in satisfaction when high-ticket purchases are handled by bots.", "link": "https://www.pinterest.com"},
-            {"source": "BlueSky", "category": "Company Update/Earnings", "title": "Key luxury holding groups report a 4% drop in brick-and-mortar retail traffic, while private alternative digital networks double active membership.", "link": "https://bsky.app"},
-            {"source": "TikTok", "category": "Cultural Tension", "title": "Subversive basicism: Young consumers intentionally buying unbranded, standard wholesale blanks to protest hyper-fast fashion drops.", "link": "https://www.tiktok.com"},
-            {"source": "Reddit", "category": "Consumer Barrier Identified", "title": "Users on r/frugal luxury are actively mapping out how to remove designer logos using seam rippers to achieve 'stealth utility'.", "link": "https://www.reddit.com"},
-            {"source": "Pinterest", "category": "Cultural Tension", "title": "Chaos moodboarding: A shift away from clean 'aesthetic' grids toward messy, scanned-in notebook pages and brutalist digital layouts.", "link": "https://www.pinterest.com"},
-            {"source": "BlueSky", "category": "Competitor Activity", "title": "Independent luxury labels are completely erasing their Instagram accounts, migrating communications entirely to encrypted Discord servers.", "link": "https://bsky.app"},
-            {"source": "TikTok", "category": "Cultural Tension", "title": "The 'Slow Sports' movement: Gen-Z creators glorifying local, non-competitive sports clubs over multi-billion dollar broadcasting events.", "link": "https://www.tiktok.com"}
-        ]
+        # 🛠️ MUDANÇA AQUI: Carrega os dados reais coletados do arquivo JSONL
+        all_signals = load_ingested_signals()
 
-        # Lógica de Filtragem baseada na seleção do usuário
-        if "All Networks" in source_filter or not source_filter:
-            filtered_signals = all_signals
+        if not all_signals:
+            st.warning("⚠️ No data found in 'data/signals.jsonl'. Please run 'python3 ingestion.py' in your terminal first!")
+            filtered_signals = []
         else:
-            filtered_signals = [s for s in all_signals if s["source"] in source_filter]
+            if "All Networks" in source_filter or not source_filter:
+                filtered_signals = all_signals
+            else:
+                filtered_signals = [s for s in all_signals if s.get("source") in source_filter]
 
-        st.caption(f"Showing {len(filtered_signals)} live signals based on your platform filters.")
+        st.caption(f"Showing {len(filtered_signals)} real live signals from database.")
 
-        # 🛠️ NOVO: BARRA DE ROLAGEM INDEPENDENTE (height=550 fixa a altura e cria o scroll do feed)
+        # FEED COM BARRA DE ROLAGEM INDEPENDENTE
         with st.container(height=550):
             for i, sig in enumerate(filtered_signals):
                 with st.container(border=True):
-                    # Tag da Rede + Categoria do Pat
-                    st.markdown(f"📱 **{sig['source']}** | *{sig['category']}*")
-                    st.write(sig['title'])
-                    st.markdown(f"[View Live Source]({sig['link']})")
+                    # Identifica a rede
+                    st.markdown(f"📱 **{sig.get('source', 'Unknown')}** | *Client: {sig.get('client_tag', 'General')}*")
+                    st.markdown(f"**{sig.get('title', 'No Title')}**")
+                    st.write(sig.get('content', ''))
+                    
+                    # 🛠️ MUDANÇA AQUI: Usa a chave "url" vinda do ingestion.py (que tem os links de busca exatos)
+                    source_url = sig.get("url", sig.get("link", "#"))
+                    st.markdown(f"[View Live Source]({source_url})")
                     
                     col_btn1, col_btn2 = st.columns([1, 1])
                     with col_btn1:
@@ -166,13 +176,13 @@ if selected_project == "Master Dashboard":
                         st.write("") 
                         if st.button("📌 Add to Desk", key=f"btn_{i}"):
                             st.session_state.project_data[target_project].append({
-                                "category": f"{sig['source']} - {sig['category']}",
-                                "title": sig["title"],
-                                "link": sig["link"],
+                                "category": f"{sig.get('source')} - Signal",
+                                "title": f"{sig.get('title')} \n\n {sig.get('content')}",
+                                "link": source_url, # Passa a URL real e profunda adiante
                                 "timestamp": datetime.datetime.now().strftime("%H:%M:%S"),
                                 "saved_by": st.session_state.username
                             })
-                            log_activity(st.session_state.username, "curate_signal", f"[{sig['source']}] Added to {target_project} Desk")
+                            log_activity(st.session_state.username, "curate_signal", f"[{sig.get('source')}] Added to {target_project} Desk")
                             st.toast(f"Saved to {target_project}!")
 
     # --- COLUNA DIREITA: STRATEGIC INTELLIGENCE ---
