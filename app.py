@@ -29,7 +29,7 @@ if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "username" not in st.session_state: st.session_state.username = None
 if "custom_prompt_rules" not in st.session_state: st.session_state.custom_prompt_rules = ""
 
-# BANCO DE DADOS TEMPORÁRIO (Incluindo Pinterest como Cliente)
+# BANCO DE DADOS TEMPORÁRIO
 if "project_data" not in st.session_state:
     st.session_state.project_data = {
         "Haypp": [], "Likepost": [], "Sallve": [], "Oceano Azul": [], "Pinterest": []
@@ -90,14 +90,13 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==========================================
-# 3. BARRA LATERAL (Pinterest incluído como Cliente)
+# 3. BARRA LATERAL
 # ==========================================
 st.sidebar.title("⟳ Countercurrent.ai")
 st.sidebar.write(f"Logged in as: **{st.session_state.username.capitalize()}**")
 st.sidebar.markdown("---")
 
 st.sidebar.subheader("📁 Ongoing Projects")
-# 🛠️ AJUSTE: Lista completa contendo Pinterest como cliente estratégico
 project_options = ["Master Dashboard", "Haypp", "Likepost", "Sallve", "Oceano Azul", "Pinterest"]
 selected_project = st.sidebar.selectbox("Select Research Desk:", project_options)
 
@@ -137,7 +136,23 @@ if selected_project == "Master Dashboard":
     
     with col_left:
         st.subheader("🌐 Master Currents Feed")
-        source_filter = st.multiselect("Filter Source:", options=["All", "TikTok", "Reddit", "Pinterest", "BlueSky", "Twitter/X"], default=["All"])
+        
+        # 🛠️ NOVA EVOLUÇÃO: Filtros Inteligentes dispostos Lado a Lado (Columns)
+        col_f1, col_f2 = st.columns([1, 1])
+        
+        with col_f1:
+            source_filter = st.multiselect(
+                "Filter Source (Network):", 
+                options=["All Networks", "TikTok", "Reddit", "Pinterest", "BlueSky", "Twitter/X"], 
+                default=["All Networks"]
+            )
+            
+        with col_f2:
+            client_filter = st.multiselect(
+                "Filter Target Client:",
+                options=["All Clients", "Ny_liberty", "Haypp", "Likepost", "Sallve", "Oceano_azul", "Pinterest"],
+                default=["All Clients"]
+            )
 
         all_signals = load_ingested_signals()
 
@@ -145,9 +160,23 @@ if selected_project == "Master Dashboard":
             st.warning("⚠️ No data found. Run 'python3 ingestion.py' first!")
             filtered_signals = []
         else:
-            if "All" in source_filter or not source_filter: filtered_signals = all_signals
-            else: filtered_signals = [s for s in all_signals if s.get("source") in source_filter]
+            # 1. Aplica filtro de rede social (Source)
+            if "All Networks" in source_filter or not source_filter:
+                stage_1 = all_signals
+            else:
+                stage_1 = [s for s in all_signals if s.get("source") in source_filter]
+            
+            # 2. Aplica filtro de cliente (Client)
+            if "All Clients" in client_filter or not client_filter:
+                filtered_signals = stage_1
+            else:
+                # O lower() previne que divergências de maiúsculas/minúsculas quebrem o filtro
+                client_filter_clean = [c.lower() for c in client_filter]
+                filtered_signals = [s for s in stage_1 if s.get("client_tag", "").lower() in client_filter_clean]
 
+        st.caption(f"Showing {len(filtered_signals)} deep signals from database based on combined filters.")
+
+        # FEED COM BARRA DE ROLAGEM INDEPENDENTE
         with st.container(height=550):
             for i, sig in enumerate(filtered_signals):
                 ai_category = get_ai_category(sig.get("title", ""), sig.get("content", ""))
@@ -163,7 +192,6 @@ if selected_project == "Master Dashboard":
                     
                     col_btn1, col_btn2 = st.columns([1, 1])
                     with col_btn1:
-                        # 🛠️ AJUSTE: Destinos de envio atualizados com Pinterest na lista
                         target_project = st.selectbox("Send to project:", ["Haypp", "Likepost", "Sallve", "Oceano Azul", "Pinterest"], key=f"sel_{i}")
                     with col_btn2:
                         st.write("")
