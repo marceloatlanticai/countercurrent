@@ -28,6 +28,10 @@ def log_activity(username, action, details=""):
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "username" not in st.session_state: st.session_state.username = None
 
+# Inicializa o prompt customizado na sessão para não perder o texto ao atualizar a tela
+if "custom_prompt_rules" not in st.session_state:
+    st.session_state.custom_prompt_rules = ""
+
 # BANCO DE DADOS TEMPORÁRIO
 if "project_data" not in st.session_state:
     st.session_state.project_data = {
@@ -42,14 +46,20 @@ if "project_briefs" not in st.session_state:
         "Oceano Azul": "Explore counter-cultural environmental movements and alternative sustainability narratives."
     }
 
-# 🛠️ SOLUÇÃO B: MOTOR DE CATEGORIZAÇÃO INTELIGENTE (Simulando análise de IA do Gemini)
+# 🛠️ SOLUÇÃO B EVOLUÍDA: O motor de IA agora escuta as regras do "Tweak Master Prompt"
 def get_ai_category(title, content):
     text = (title + " " + content).lower()
-    if "fashion" in text or "aesthetic" in text or "shift" in text or "core" in text:
+    rules = st.session_state.custom_prompt_rules.lower()
+    
+    # Se o usuário digitou algo no Tweak Prompt, a IA prioriza o ajuste dele
+    if rules and any(word in text for word in rules.split()):
+        return "Custom Strategic Alert"
+        
+    if "fashion" in text or "aesthetic" in text or "shift" in text or "core" in text or "beauty" in text:
         return "Cultural Tension"
-    elif "competitor" in text or "nike" in text or "brand" in text or "market" in text:
+    elif "competitor" in text or "nike" in text or "brand" in text or "market" in text or "cosméticos" in text:
         return "Competitor Activity"
-    elif "barrier" in text or "fatigue" in text or "rejecting" in text or "drop" in text:
+    elif "barrier" in text or "fatigue" in text or "rejecting" in text or "drop" in text or "pouches" in text:
         return "Consumer Barrier Identified"
     else:
         return "Company Update/Earnings"
@@ -83,14 +93,13 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==========================================
-# 3. BARRA LATERAL (CORREÇÕES INCLUSAS)
+# 3. BARRA LATERAL (COM O TWEAK MASTER PROMPT DE VOLTA)
 # ==========================================
 st.sidebar.title("⟳ Countercurrent.ai")
 st.sidebar.write(f"Logged in as: **{st.session_state.username.capitalize()}**")
 st.sidebar.markdown("---")
 
 st.sidebar.subheader("📁 Ongoing Projects")
-# 🛠️ Nomes corrigidos: Sallve e Oceano Azul
 project_options = ["Master Dashboard", "Haypp", "Likepost", "Sallve", "Oceano Azul"]
 selected_project = st.sidebar.selectbox("Select Research Desk:", project_options)
 
@@ -98,6 +107,22 @@ if "current_project" not in st.session_state: st.session_state.current_project =
 if selected_project != st.session_state.current_project:
     log_activity(st.session_state.username, "switch_project", f"Moved to {selected_project}")
     st.session_state.current_project = selected_project
+
+st.sidebar.markdown("---")
+
+# 🛠️ RECUPERADO: Módulo do Prompt e Chat conforme o Wireframe do Pat
+st.sidebar.subheader("💬 Prompt & Chat Module")
+st.sidebar.info("Allows you to search, sort info by date/keywords, or tweak the master prompt.")
+custom_prompt_input = st.sidebar.text_area(
+    "Tweak Master Prompt:", 
+    value=st.session_state.custom_prompt_rules,
+    placeholder="Type target keywords or custom AI rules here..."
+)
+if st.sidebar.button("Update Engine Logic", use_container_width=True):
+    st.session_state.custom_prompt_rules = custom_prompt_input
+    log_activity(st.session_state.username, "tweak_prompt", f"Updated prompt rules: '{custom_prompt_input[:30]}...'")
+    st.sidebar.success("Engine logic updated for this session!")
+    st.rerun()
 
 st.sidebar.markdown("---")
 if st.sidebar.button("Logout", use_container_width=True):
@@ -127,7 +152,6 @@ if selected_project == "Master Dashboard":
 
         with st.container(height=550):
             for i, sig in enumerate(filtered_signals):
-                # 🛠️ APLICAÇÃO DA SOLUÇÃO B: IA categoriza o post dinamicamente antes de mostrar
                 ai_category = get_ai_category(sig.get("title", ""), sig.get("content", ""))
                 client_display = sig.get("client_tag", "General").replace("_", " ").capitalize()
                 
@@ -141,7 +165,6 @@ if selected_project == "Master Dashboard":
                     
                     col_btn1, col_btn2 = st.columns([1, 1])
                     with col_btn1:
-                        # Mapeado com as correções de nomes
                         target_project = st.selectbox("Send to project:", ["Haypp", "Likepost", "Sallve", "Oceano Azul"], key=f"sel_{i}")
                     with col_btn2:
                         st.write("")
