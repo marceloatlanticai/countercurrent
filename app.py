@@ -29,12 +29,30 @@ if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "username" not in st.session_state: st.session_state.username = None
 if "custom_prompt_rules" not in st.session_state: st.session_state.custom_prompt_rules = ""
 
-# BANCO DE DADOS TEMPORÁRIO
-if "project_data" not in st.session_state:
-    st.session_state.project_data = {
-        "Haypp": [], "Likepost": [], "Sallve": [], "Oceano Azul": [], "Pinterest": []
-    }
+# 📁 FUNÇÕES PARA MEMÓRIA PERMANENTE DOS PROJETOS (Cofre de Dados)
+VAULT_PATH = "data/project_vault.jsonl"
 
+def save_to_vault(project, item):
+    """Salva permanentemente um sinal favoritado no arquivo"""
+    if not os.path.exists("data"): os.makedirs("data")
+    entry = {"project": project, "data": item}
+    with open(VAULT_PATH, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry) + "\n")
+
+def load_from_vault():
+    """Carrega todos os dados salvos historicamente nos projetos"""
+    vault_data = {"Haypp": [], "Likepost": [], "Sallve": [], "Oceano Azul": [], "Pinterest": []}
+    if os.path.exists(VAULT_PATH):
+        with open(VAULT_PATH, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    entry = json.loads(line.strip())
+                    proj = entry.get("project")
+                    if proj in vault_data:
+                        vault_data[proj].append(entry.get("data"))
+    return vault_data
+
+# Inicializa os briefs padrões de forma permanente
 if "project_briefs" not in st.session_state:
     st.session_state.project_briefs = {
         "Haypp": "Search for answers regarding nicotine pouch market disruption and alternative cultural patterns.",
@@ -48,18 +66,11 @@ if "project_briefs" not in st.session_state:
 def get_ai_category(title, content):
     text = (title + " " + content).lower()
     rules = st.session_state.custom_prompt_rules.lower()
-    
-    if rules and any(word in text for word in rules.split()):
-        return "Custom Strategic Alert"
-        
-    if "fashion" in text or "aesthetic" in text or "shift" in text or "core" in text or "beauty" in text:
-        return "Cultural Tension"
-    elif "competitor" in text or "nike" in text or "brand" in text or "market" in text or "cosméticos" in text:
-        return "Competitor Activity"
-    elif "barrier" in text or "fatigue" in text or "rejecting" in text or "drop" in text or "pouches" in text:
-        return "Consumer Barrier Identified"
-    else:
-        return "Company Update/Earnings"
+    if rules and any(word in text for word in rules.split()): return "Custom Strategic Alert"
+    if "fashion" in text or "aesthetic" in text or "shift" in text or "core" in text or "beauty" in text: return "Cultural Tension"
+    elif "competitor" in text or "nike" in text or "brand" in text or "market" in text or "cosméticos" in text: return "Competitor Activity"
+    elif "barrier" in text or "fatigue" in text or "rejecting" in text or "drop" in text or "pouches" in text: return "Consumer Barrier Identified"
+    else: return "Company Update/Earnings"
 
 def load_ingested_signals():
     path = "data/signals.jsonl"
@@ -106,18 +117,11 @@ if selected_project != st.session_state.current_project:
     st.session_state.current_project = selected_project
 
 st.sidebar.markdown("---")
-
-# Módulo do Prompt e Chat
 st.sidebar.subheader("💬 Prompt & Chat Module")
-st.sidebar.info("Allows you to search, sort info by date/keywords, or tweak the master prompt.")
-custom_prompt_input = st.sidebar.text_area(
-    "Tweak Master Prompt:", 
-    value=st.session_state.custom_prompt_rules,
-    placeholder="Type target keywords or custom AI rules here..."
-)
+custom_prompt_input = st.sidebar.text_area("Tweak Master Prompt:", value=st.session_state.custom_prompt_rules, placeholder="Type target keywords or custom AI rules here...")
 if st.sidebar.button("Update Engine Logic", use_container_width=True):
     st.session_state.custom_prompt_rules = custom_prompt_input
-    log_activity(st.session_state.username, "tweak_prompt", f"Updated prompt rules: '{custom_prompt_input[:30]}...'")
+    log_activity(st.session_state.username, "tweak_prompt", f"Updated prompt rules")
     st.sidebar.success("Engine logic updated!")
     st.rerun()
 
@@ -131,28 +135,20 @@ if st.sidebar.button("Logout", use_container_width=True):
 # ==========================================
 st.title(f"{selected_project}")
 
+# Carrega os dados persistentes salvos em disco de todos os projetos
+project_vault = load_from_vault()
+
 if selected_project == "Master Dashboard":
     col_left, col_right = st.columns([1, 1])
     
     with col_left:
         st.subheader("🌐 Master Currents Feed")
         
-        # 🛠️ NOVA EVOLUÇÃO: Filtros Inteligentes dispostos Lado a Lado (Columns)
         col_f1, col_f2 = st.columns([1, 1])
-        
         with col_f1:
-            source_filter = st.multiselect(
-                "Filter Source (Network):", 
-                options=["All Networks", "TikTok", "Reddit", "Pinterest", "BlueSky", "Twitter/X"], 
-                default=["All Networks"]
-            )
-            
+            source_filter = st.multiselect("Filter Source:", options=["All Networks", "TikTok", "Reddit", "Pinterest", "BlueSky", "Twitter/X"], default=["All Networks"])
         with col_f2:
-            client_filter = st.multiselect(
-                "Filter Target Client:",
-                options=["All Clients", "Ny_liberty", "Haypp", "Likepost", "Sallve", "Oceano_azul", "Pinterest"],
-                default=["All Clients"]
-            )
+            client_filter = st.multiselect("Filter Target Client:", options=["All Clients", "Ny_liberty", "Haypp", "Likepost", "Sallve", "Oceano_azul", "Pinterest"], default=["All Clients"])
 
         all_signals = load_ingested_signals()
 
@@ -160,23 +156,16 @@ if selected_project == "Master Dashboard":
             st.warning("⚠️ No data found. Run 'python3 ingestion.py' first!")
             filtered_signals = []
         else:
-            # 1. Aplica filtro de rede social (Source)
-            if "All Networks" in source_filter or not source_filter:
-                stage_1 = all_signals
-            else:
-                stage_1 = [s for s in all_signals if s.get("source") in source_filter]
+            if "All Networks" in source_filter or not source_filter: stage_1 = all_signals
+            else: stage_1 = [s for s in all_signals if s.get("source") in source_filter]
             
-            # 2. Aplica filtro de cliente (Client)
-            if "All Clients" in client_filter or not client_filter:
-                filtered_signals = stage_1
+            if "All Clients" in client_filter or not client_filter: filtered_signals = stage_1
             else:
-                # O lower() previne que divergências de maiúsculas/minúsculas quebrem o filtro
                 client_filter_clean = [c.lower() for c in client_filter]
                 filtered_signals = [s for s in stage_1 if s.get("client_tag", "").lower() in client_filter_clean]
 
-        st.caption(f"Showing {len(filtered_signals)} deep signals from database based on combined filters.")
+        st.caption(f"Showing {len(filtered_signals)} deep signals from database.")
 
-        # FEED COM BARRA DE ROLAGEM INDEPENDENTE
         with st.container(height=550):
             for i, sig in enumerate(filtered_signals):
                 ai_category = get_ai_category(sig.get("title", ""), sig.get("content", ""))
@@ -196,15 +185,18 @@ if selected_project == "Master Dashboard":
                     with col_btn2:
                         st.write("")
                         if st.button("📌 Add to Desk", key=f"btn_{i}"):
-                            st.session_state.project_data[target_project].append({
+                            new_item = {
                                 "category": f"{sig.get('source')} - {ai_category}",
                                 "title": f"{sig.get('title')} \n\n {sig.get('content')}",
                                 "link": source_url,
-                                "timestamp": datetime.datetime.now().strftime("%H:%M:%S"),
+                                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                 "saved_by": st.session_state.username
-                            })
-                            log_activity(st.session_state.username, "curate_signal", f"Added to {target_project} Desk")
-                            st.toast(f"Saved to {target_project}!")
+                            }
+                            # 💾 SALVAMENTO DUPLO: Salva na sessão atual E grava permanentemente no arquivo em disco
+                            save_to_vault(target_project, new_item)
+                            
+                            log_activity(st.session_state.username, "curate_signal", f"Permanent capture for {target_project}")
+                            st.toast(f"Saved permanently to {target_project}!")
 
     with col_right:
         st.subheader("🧠 Strategic Intelligence")
@@ -226,7 +218,7 @@ if selected_project == "Master Dashboard":
             if st.button("Generate Brief"):
                 st.write("**[Dispatch Output]:** Simulated strategic brief for: " + dispatch_query)
 
-# PÁGINAS DOS PROJETOS
+# PÁGINAS DOS PROJETOS (PUXANDO DO COFRE DE LONGO PRAZO)
 else:
     with st.container(border=True):
         st.markdown("### 📋 The Brief")
@@ -240,7 +232,9 @@ else:
     
     with col_proj_left:
         st.markdown("### 🗂️ Research Desk (Collected Data)")
-        saved_items = st.session_state.project_data[selected_project]
+        
+        # 🛠️ AJUSTE CRUCIAL: Agora lê os dados que vieram do arquivo permanente, não mais da memória volátil!
+        saved_items = project_vault[selected_project]
         
         if len(saved_items) == 0: st.info("No data collected yet.")
         else:
@@ -257,7 +251,7 @@ else:
             else:
                 with st.spinner("Analyzing team curation..."):
                     st.markdown("#### 🔍 Identified Whitespace")
-                    st.info(f"Based on the signals saved for {selected_project}, there is an unexploited gap in subverting traditional category codes.")
+                    st.info(f"Based on the {len(saved_items)} permanent signals saved for {selected_project}, there is an unexploited gap in subverting traditional category codes.")
 
 # AUDIT LOG
 st.markdown("---")
