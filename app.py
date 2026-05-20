@@ -15,7 +15,7 @@ st.set_page_config(
 # ==========================================
 # 1. SISTEMA DE USUÁRIOS E CREDENCIAIS
 # ==========================================
-USER_CREDENTIALS = { "marcelo": "senha123", "pat": "design2026", "marco": "strategy3", "joao": "trends4" }
+USER_CREDENTIALS = { "marcelo": "senha123", "pat": "pat2026", "marco": "marco2026", "joao": "joao2026" }
 
 def log_activity(username, action, details=""):
     log_entry = {
