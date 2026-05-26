@@ -12,6 +12,26 @@ st.set_page_config(
     layout="wide"
 )
 
+# Estilização CSS para as Tags Coloridas (Rounded Rectangles)
+st.markdown("""
+<style>
+    .tag {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: bold;
+        color: white;
+        margin-right: 8px;
+    }
+    .tag-tension { background-color: #ef4444; } /* Vermelho */
+    .tag-competitor { background-color: #f59e0b; color: #1e293b; } /* Amarelo */
+    .tag-barrier { background-color: #3b82f6; } /* Azul */
+    .tag-custom { background-color: #a855f7; } /* Roxo */
+    .tag-general { background-color: #64748b; } /* Cinza */
+</style>
+""", unsafe_allow_html=True)
+
 # ==========================================
 # 1. SISTEMA DE USUÁRIOS E CREDENCIAIS
 # ==========================================
@@ -33,14 +53,12 @@ if "custom_prompt_rules" not in st.session_state: st.session_state.custom_prompt
 VAULT_PATH = "data/project_vault.jsonl"
 
 def save_to_vault(project, item):
-    """Salva permanentemente um sinal favoritado no arquivo"""
     if not os.path.exists("data"): os.makedirs("data")
     entry = {"project": project, "data": item}
     with open(VAULT_PATH, "a", encoding="utf-8") as f:
         f.write(json.dumps(entry) + "\n")
 
 def load_from_vault():
-    """Carrega todos os dados salvos historicamente nos projetos"""
     vault_data = {"Haypp": [], "Likepost": [], "Sallve": [], "Oceano Azul": [], "Pinterest": []}
     if os.path.exists(VAULT_PATH):
         with open(VAULT_PATH, "r", encoding="utf-8") as f:
@@ -52,7 +70,6 @@ def load_from_vault():
                         vault_data[proj].append(entry.get("data"))
     return vault_data
 
-# Inicializa os briefs padrões de forma permanente
 if "project_briefs" not in st.session_state:
     st.session_state.project_briefs = {
         "Haypp": "Search for answers regarding nicotine pouch market disruption and alternative cultural patterns.",
@@ -71,6 +88,14 @@ def get_ai_category(title, content):
     elif "competitor" in text or "nike" in text or "brand" in text or "market" in text or "cosméticos" in text: return "Competitor Activity"
     elif "barrier" in text or "fatigue" in text or "rejecting" in text or "drop" in text or "pouches" in text: return "Consumer Barrier Identified"
     else: return "Company Update/Earnings"
+
+# Mapeamento de Classes CSS para as Tags
+def get_tag_html(category):
+    if category == "Cultural Tension": return f'<span class="tag tag-tension">{category}</span>'
+    elif category == "Competitor Activity": return f'<span class="tag tag-competitor">{category}</span>'
+    elif category == "Consumer Barrier Identified": return f'<span class="tag tag-barrier">{category}</span>'
+    elif category == "Custom Strategic Alert": return f'<span class="tag tag-custom">{category}</span>'
+    else: return f'<span class="tag tag-general">{category}</span>'
 
 def load_ingested_signals():
     path = "data/signals.jsonl"
@@ -135,7 +160,6 @@ if st.sidebar.button("Logout", use_container_width=True):
 # ==========================================
 st.title(f"{selected_project}")
 
-# Carrega os dados persistentes salvos em disco de todos os projetos
 project_vault = load_from_vault()
 
 if selected_project == "Master Dashboard":
@@ -144,11 +168,19 @@ if selected_project == "Master Dashboard":
     with col_left:
         st.subheader("🌐 Master Currents Feed")
         
+        # FILTROS LADO A LADO
         col_f1, col_f2 = st.columns([1, 1])
         with col_f1:
             source_filter = st.multiselect("Filter Source:", options=["All Networks", "TikTok", "Reddit", "Pinterest", "BlueSky", "Twitter/X"], default=["All Networks"])
         with col_f2:
             client_filter = st.multiselect("Filter Target Client:", options=["All Clients", "Ny_liberty", "Haypp", "Likepost", "Sallve", "Oceano_azul", "Pinterest"], default=["All Clients"])
+
+        # 🛠️ NOVA EVOLUÇÃO: Terceiro filtro dedicado para as Categorias da IA (Fica logo abaixo dos dois primeiros)
+        category_filter = st.multiselect(
+            "Filter AI Strategic Category:",
+            options=["All Categories", "Cultural Tension", "Competitor Activity", "Consumer Barrier Identified", "Custom Strategic Alert", "Company Update/Earnings"],
+            default=["All Categories"]
+        )
 
         all_signals = load_ingested_signals()
 
@@ -156,15 +188,28 @@ if selected_project == "Master Dashboard":
             st.warning("⚠️ No data found. Run 'python3 ingestion.py' first!")
             filtered_signals = []
         else:
+            # Funil de Filtro 1: Redes
             if "All Networks" in source_filter or not source_filter: stage_1 = all_signals
             else: stage_1 = [s for s in all_signals if s.get("source") in source_filter]
             
-            if "All Clients" in client_filter or not client_filter: filtered_signals = stage_1
+            # Funil de Filtro 2: Clientes
+            if "All Clients" in client_filter or not client_filter: stage_2 = stage_1
             else:
                 client_filter_clean = [c.lower() for c in client_filter]
-                filtered_signals = [s for s in stage_1 if s.get("client_tag", "").lower() in client_filter_clean]
+                stage_2 = [s for s in stage_1 if s.get("client_tag", "").lower() in client_filter_clean]
+                
+            # Funil de Filtro 3: Categorias da IA (Adicionado dinamicamente à listagem)
+            if "All Categories" in category_filter or not category_filter:
+                filtered_signals = stage_2
+            else:
+                filtered_signals = []
+                for sig in stage_2:
+                    # Calcula a categoria em tempo real para bater com o filtro selecionado
+                    real_cat = get_ai_category(sig.get("title", ""), sig.get("content", ""))
+                    if real_cat in category_filter:
+                        filtered_signals.append(sig)
 
-        st.caption(f"Showing {len(filtered_signals)} deep signals from database.")
+        st.caption(f"Showing {len(filtered_signals)} deep signals from database based on combined parameters.")
 
         with st.container(height=550):
             for i, sig in enumerate(filtered_signals):
@@ -172,7 +217,14 @@ if selected_project == "Master Dashboard":
                 client_display = sig.get("client_tag", "General").replace("_", " ").capitalize()
                 
                 with st.container(border=True):
-                    st.markdown(f"📱 **{sig.get('source')}** | 🎯 **{ai_category}** | 🏢 *Client: {client_display}*")
+                    # Ingestão de metadados limpos
+                    st.markdown(f"📱 **{sig.get('source')}** | 🏢 *Client: {client_display}*")
+                    
+                    # 🛠️ NOVA EVOLUÇÃO: Renderização do Rounded Rectangle Colorido baseado na Categoria
+                    tag_html = get_tag_html(ai_category)
+                    st.markdown(tag_html, unsafe_allow_html=True)
+                    st.write("") # Pequeno espaçamento estético
+                    
                     st.markdown(f"**{sig.get('title')}**")
                     st.write(sig.get('content'))
                     
@@ -192,9 +244,7 @@ if selected_project == "Master Dashboard":
                                 "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                 "saved_by": st.session_state.username
                             }
-                            # 💾 SALVAMENTO DUPLO: Salva na sessão atual E grava permanentemente no arquivo em disco
                             save_to_vault(target_project, new_item)
-                            
                             log_activity(st.session_state.username, "curate_signal", f"Permanent capture for {target_project}")
                             st.toast(f"Saved permanently to {target_project}!")
 
@@ -218,7 +268,7 @@ if selected_project == "Master Dashboard":
             if st.button("Generate Brief"):
                 st.write("**[Dispatch Output]:** Simulated strategic brief for: " + dispatch_query)
 
-# PÁGINAS DOS PROJETOS (PUXANDO DO COFRE DE LONGO PRAZO)
+# PÁGINAS DOS PROJETOS
 else:
     with st.container(border=True):
         st.markdown("### 📋 The Brief")
@@ -232,8 +282,6 @@ else:
     
     with col_proj_left:
         st.markdown("### 🗂️ Research Desk (Collected Data)")
-        
-        # 🛠️ AJUSTE CRUCIAL: Agora lê os dados que vieram do arquivo permanente, não mais da memória volátil!
         saved_items = project_vault[selected_project]
         
         if len(saved_items) == 0: st.info("No data collected yet.")
