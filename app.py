@@ -245,26 +245,36 @@ if selected_project == "Master Dashboard":
 
         all_signals = load_ingested_signals()
 
-        if not all_signals:
-            st.warning("⚠️ No data found. Run 'python3 ingestion.py' first!")
-            filtered_signals = []
-        else:
-            if "All Networks" in source_filter or not source_filter: stage_1 = all_signals
-            else: stage_1 = [s for s in all_signals if s.get("source") in source_filter]
-            
-            if "All Clients" in client_filter or not client_filter: stage_2 = stage_1
-            else:
-                client_filter_clean = [c.lower() for c in client_filter]
-                stage_2 = [s for s in stage_1 if s.get("client_tag", "").lower() in client_filter_clean]
+        # 🛠️ SISTEMA DE CAPTURA BRUTA (Driblando instabilidade do Streamlit Secrets)
+                live_key = ""
                 
-            if "All Categories" in category_filter or not category_filter:
-                filtered_signals = stage_2
-            else:
-                filtered_signals = []
-                for sig in stage_2:
-                    real_cat = get_ai_category(sig.get("title", ""), sig.get("content", ""))
-                    if real_cat in category_filter:
-                        filtered_signals.append(sig)
+                # Tenta ler o arquivo de segredos bruto do sistema operacional do Streamlit Cloud
+                try:
+                    import pathlib
+                    # O Streamlit Cloud guarda o arquivo real de secrets exatamente neste caminho oculto do servidor
+                    secrets_path = pathlib.Path(".streamlit/secrets.toml")
+                    if secrets_path.exists():
+                        with open(secrets_path, "r", encoding="utf-8") as f:
+                            for line in f:
+                                if "GEMINI_API_KEY" in line:
+                                    live_key = line.split("=")[1].replace('"', '').replace("'", "").strip()
+                except:
+                    pass
+
+                # Se a busca bruta falhar, roda os fallbacks padrão em silêncio
+                if not live_key:
+                    try: live_key = st.secrets.get("GEMINI_API_KEY", "")
+                    except: pass
+                if not live_key:
+                    live_key = os.environ.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
+
+                # Se absolutamente tudo falhar, ele assume a chave estática (Se quiser colar a sua direto aqui entre aspas como plano C, sinta-se livre!)
+                if not live_key:
+                    live_key = "COLE_SUA_CHAVE_AQUI_SE_QUISER_BLINDAR"
+
+                if live_key == "COLE_SUA_CHAVE_AQUI_SE_QUISER_BLINDAR" or not live_key:
+                    st.error("🚨 GEMINI_API_KEY environment variable not found. Please ensure it is correctly defined inside your Streamlit Cloud Secrets panel.")
+                else:
 
         st.caption(f"Showing {len(filtered_signals)} deep signals from database based on combined parameters.")
 
