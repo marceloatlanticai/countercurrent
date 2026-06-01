@@ -96,7 +96,15 @@ st.markdown("""
 # CONFIGURAÇÃO DO GEMINI LIVE ENGINE
 # ==========================================
 # Tenta puxar a chave do ambiente; caso contrário, usa uma string vazia para tratar depois
-GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_KEY = ""
+
+# Primeiro tenta puxar do formato oficial de Secrets do Streamlit Cloud
+if "GEMINI_API_KEY" in st.secrets:
+    GEMINI_KEY = st.secrets["GEMINI_API_KEY"]
+# Se não achar (ex: rodando local), tenta buscar do ambiente operacional
+elif os.environ.get("GEMINI_API_KEY"):
+    GEMINI_KEY = os.environ.get("GEMINI_API_KEY")
+
 if GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY)
 
