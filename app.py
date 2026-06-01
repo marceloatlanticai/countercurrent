@@ -312,13 +312,86 @@ if selected_project == "Master Dashboard":
             st.markdown("<p style='font-size:14px; color:#e2e8f0;'>1. Building 'Ugly Performance' gear to break the luxury aesthetic mold.<br>2. Ghost brands: Zero social media presence, maximum impact.<br>3. The 'Slow Sports' movement: Rewarding loyalty over fast consumption.</p>", unsafe_allow_html=True)
 
         st.write("")
+      st.write("")
         st.markdown("<h3 style='font-weight:600; font-size:18px; color:#f1f5f9;'>🛠️ Real-time Processing Labs</h3>", unsafe_allow_html=True)
         tab1, tab2, tab3 = st.tabs(["⚡ AI Dispatch", "🤝 Thinker Partner", "📊 Meta-Analysis"])
-        with tab1:
-            dispatch_query = st.text_input("Ask Dispatch for an instant brief:", placeholder="e.g., WNBA x Luxury Strategy for NY Liberty")
-            if st.button("Generate Strategic Framework"):
-                st.info("**[Dispatch Output]:** Simulated strategic brief for: " + dispatch_query)
+        
+        # Reaproveita a lógica de captura da chave de segurança que deu certo
+        labs_key = ""
+        try:
+            import pathlib
+            secrets_path = pathlib.Path(".streamlit/secrets.toml")
+            if secrets_path.exists():
+                with open(secrets_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if "GEMINI_API_KEY" in line:
+                            labs_key = line.split("=")[1].replace('"', '').replace("'", "").strip()
+        except: pass
+        if not labs_key:
+            try: labs_key = st.secrets.get("GEMINI_API_KEY", "")
+            except: pass
+        if not labs_key:
+            labs_key = os.environ.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 
+        with tab1:
+            dispatch_query = st.text_input("Ask Dispatch for an instant brief:", placeholder="e.g., WNBA x Luxury Strategy for NY Liberty", key="query_dispatch")
+            if st.button("Generate Strategic Framework", use_container_width=True):
+                if not dispatch_query.strip():
+                    st.warning("Please type a directive first.")
+                elif not labs_key:
+                    st.error("🚨 GEMINI_API_KEY not found.")
+                else:
+                    with st.spinner("Dispatching engine intelligence..."):
+                        try:
+                            genai.configure(api_key=labs_key)
+                            model = genai.GenerativeModel("gemini-2.5-pro")
+                            prompt = f"You are AI Dispatch, a lightning-fast brand strategist. Based on this request: '{dispatch_query}', generate an executive 3-step strategic framework in English with unexpected, bold angles."
+                            response = model.generate_content(prompt)
+                            st.markdown("<h5 style='color:#818cf8;'>⚡ Live Dispatch Brief</h5>", unsafe_allow_html=True)
+                            st.write(response.text)
+                        except Exception as e: st.error(f"Error: {str(e)}")
+
+        with tab2:
+            thinker_challenge = st.text_area("Drop a macro brand challenge to debate:", placeholder="e.g., How can a heritage legacy brand appeal to Gen Z without looking cringe?", key="query_thinker")
+            if st.button("Debate with Thinker Partner", use_container_width=True):
+                if not thinker_challenge.strip():
+                    st.warning("Please input a challenge context.")
+                elif not labs_key:
+                    st.error("🚨 GEMINI_API_KEY not found.")
+                else:
+                    with st.spinner("Consulting strategic partner..."):
+                        try:
+                            genai.configure(api_key=labs_key)
+                            model = genai.GenerativeModel("gemini-2.5-pro")
+                            prompt = f"You are an iconoclastic, sharp, and cynical Brand Strategy Director. Challenge this premise: '{thinker_challenge}'. Provide 3 counter-intuitive, raw, and high-impact intellectual provocations in English that subvert common sense."
+                            response = model.generate_content(prompt)
+                            st.markdown("<h5 style='color:#f43f5e;'>🤝 Partner Debriefing</h5>", unsafe_allow_html=True)
+                            st.write(response.text)
+                        except Exception as e: st.error(f"Error: {str(e)}")
+
+        with tab3:
+            st.markdown("<p style='font-size:14px; color:#94a3b8;'>Cross-reference all loaded signals in the feed to extract deep macro cultural pattern overlaps.</p>", unsafe_allow_html=True)
+            if st.button("Execute Cross-Feed Meta-Analysis", use_container_width=True):
+                if not all_signals:
+                    st.warning("Feed is empty. No signals to parse.")
+                elif not labs_key:
+                    st.error("🚨 GEMINI_API_KEY not found.")
+                else:
+                    with st.spinner("Processing metadata across all market sectors..."):
+                        try:
+                            genai.configure(api_key=labs_key)
+                            model = genai.GenerativeModel("gemini-2.5-pro")
+                            
+                            # Transforma todo o feed atual em texto para a IA cruzar
+                            feed_text = ""
+                            for s in all_signals[:15]: # Limita aos 15 mais recentes para performance
+                                feed_text += f"\n- [{s.get('source')} | Client: {s.get('client_tag')}]: {s.get('title')} -> {s.get('content')}\n"
+                                
+                            prompt = f"Analyze these raw fragmented data points across multiple industries:\n{feed_text}\n\nFind ONE single underlying cultural or human pattern that connects these seemingly unrelated insights. Explain the pattern and tell us how an avant-garde agency can weaponize it. Write in sharp English."
+                            response = model.generate_content(prompt)
+                            st.markdown("<h5 style='color:#34d399;'>📊 Meta-Analysis Report</h5>", unsafe_allow_html=True)
+                            st.write(response.text)
+                        except Exception as e: st.error(f"Error: {str(e)}")
 # PÁGINAS DOS PROJETOS
 else:
     with st.container(border=True):
