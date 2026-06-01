@@ -353,25 +353,32 @@ else:
             if len(saved_items) == 0: 
                 st.warning("Add elements to the desk first to perform analytical cross-referencing.")
             else:
-                # 🛠️ CAPTURA DINÂMICA DA CHAVE NOS SECRETS DO STREAMLIT CLOUD
-                current_key = ""
+                # 🛠️ CAPTURA IMEDIATA DA CHAVE SEM ENTRAVES DE ESCOPO GLOBAL
+                live_key = ""
                 if "GEMINI_API_KEY" in st.secrets:
-                    current_key = st.secrets["GEMINI_API_KEY"]
+                    live_key = st.secrets["GEMINI_API_KEY"]
                 elif os.environ.get("GEMINI_API_KEY"):
-                    current_key = os.environ.get("GEMINI_API_KEY")
+                    live_key = os.environ.get("GEMINI_API_KEY")
 
-                if not current_key:
-                    st.error("🚨 GEMINI_API_KEY environment variable not found. Please set your key to enable live synthesis.")
+                # Se falhar nos dois métodos padrão, tentamos a leitura direta do dicionário interno do Streamlit
+                if not live_key:
+                    try:
+                        live_key = st.secrets.get("GEMINI_API_KEY", "")
+                    except:
+                        pass
+
+                if not live_key:
+                    st.error("🚨 GEMINI_API_KEY not detected by Streamlit core. Please re-check your Cloud Secrets panel.")
                 else:
-                    with st.spinner("Gemini Pro is reading your curated data and generating custom strategy..."):
+                    with st.spinner("Gemini Pro is compiling workspace nodes and engineering creative counter-brief..."):
                         try:
-                            # Inicializa o motor com a chave validada na hora
-                            genai.configure(api_key=current_key)
+                            # 🧠 Força a configuração da API direto no escopo de execução da ação
+                            genai.configure(api_key=live_key)
                             
                             # Compila todos os posts salvos em texto puro para a IA ler
                             compiled_posts = ""
                             for idx, item in enumerate(saved_items):
-                                compiled_posts += f"\n--- POST CURADO NÚMERO {idx+1} ---\n{item['title']}\n"
+                                compiled_posts += f"\n--- CURATED POST {idx+1} ---\n{item['title']}\n"
 
                             # Prompt Avançado de Estratégia Contracorrente
                             master_prompt = f"""
@@ -391,7 +398,7 @@ else:
                             Keep the tone sharp, executive, and highly strategic. Use clean bullet points or short text paragraphs.
                             """
                             
-                            # Chamada oficial ao modelo mais avançado da Google para textos estratégicos
+                            # Inicialização direta do modelo de produção
                             model = genai.GenerativeModel("gemini-1.5-pro")
                             response = model.generate_content(master_prompt)
                             
@@ -402,7 +409,7 @@ else:
                             st.write(response.text)
                             
                         except Exception as e:
-                            st.error(f"Error connecting to Gemini API: {str(e)}")
+                            st.error(f"Error executing Gemini runtime generation: {str(e)}")
 
 # AUDIT LOG
 st.markdown("---")
