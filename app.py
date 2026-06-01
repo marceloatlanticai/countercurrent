@@ -409,7 +409,7 @@ else:
                             
                             log_activity(st.session_state.username, "execute_ai_synthesis", f"Generated live Gemini Pro report for {selected_project}")
                             
-                            st.markdown("<h5 style='color:#34d399; font-weight:600;'>⚡ Live Strategic Output (Gemini 1.5 Pro)</h5>", unsafe_allow_html=True)
+                            st.markdown("<h5 style='color:#34d399; font-weight:600;'>⚡ Live Strategic Output (Gemini 2.5 Pro)</h5>", unsafe_allow_html=True)
                             st.write(response.text)
                             
                         except Exception as e:
