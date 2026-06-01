@@ -2,6 +2,7 @@ import streamlit as st
 import datetime
 import json
 import os
+import google.generativeai as genai
 
 # ==========================================
 # CONFIGURAÇÃO DA PÁGINA (Premium Theme)
@@ -15,8 +16,7 @@ st.set_page_config(
 # 🎨 CAMADA DE DESIGN: Google AI Studio UI Inspired Style
 st.markdown("""
 <style>
-    /* Importando fonte moderna inter */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
     
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
@@ -34,7 +34,7 @@ st.markdown("""
     }
     
     div[data-testid="stCard"]:hover {
-        border-color: #4f46e5 !important; /* Brilho roxo ao passar o mouse */
+        border-color: #4f46e5 !important;
         transform: translateY(-2px);
     }
 
@@ -51,11 +51,11 @@ st.markdown("""
         margin-bottom: 12px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
-    .tag-tension { background: linear-gradient(135deg, #ef4444, #b91c1c); } /* Vermelho */
-    .tag-competitor { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; } /* Amarelo */
-    .tag-barrier { background: linear-gradient(135deg, #3b82f6, #1d4ed8); } /* Azul */
-    .tag-custom { background: linear-gradient(135deg, #a855f7, #6b21a8); } /* Roxo */
-    .tag-general { background: linear-gradient(135deg, #64748b, #475569); } /* Cinza */
+    .tag-tension { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+    .tag-competitor { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; }
+    .tag-barrier { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+    .tag-custom { background: linear-gradient(135deg, #a855f7, #6b21a8); }
+    .tag-general { background: linear-gradient(135deg, #64748b, #475569); }
 
     /* Botões Premium Customizados */
     .stButton>button {
@@ -91,6 +91,14 @@ st.markdown("""
     ::-webkit-scrollbar-thumb:hover { background: #4f46e5; }
 </style>
 """, unsafe_allow_html=True)
+
+# ==========================================
+# CONFIGURAÇÃO DO GEMINI LIVE ENGINE
+# ==========================================
+# Tenta puxar a chave do ambiente; caso contrário, usa uma string vazia para tratar depois
+GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "")
+if GEMINI_KEY:
+    genai.configure(api_key=GEMINI_KEY)
 
 # ==========================================
 # 1. SISTEMA DE USUÁRIOS E CREDENCIAIS
@@ -140,7 +148,7 @@ if "project_briefs" not in st.session_state:
         "Pinterest": "Understand the shift toward chaotic curations, 'Anti-Athleisure' trends, and private digital mood boards as a brand ecosystem strategy."
     }
 
-# MOTOR DE CATEGORIZAÇÃO INTELIGENTE
+# MOTOR DE CATEGORIZAÇÃO INTELIGENTE (Simulado para o Feed de Entrada)
 def get_ai_category(title, content):
     text = (title + " " + content).lower()
     rules = st.session_state.custom_prompt_rules.lower()
@@ -279,7 +287,6 @@ if selected_project == "Master Dashboard":
                 with st.container(border=True):
                     st.markdown(f"<span style='color:#94a3b8; font-size:12px;'>📱 <b>{sig.get('source')}</b> | 🏢 Client: <i>{client_display}</i></span>", unsafe_allow_html=True)
                     
-                    # Tags em gradiente injetadas por HTML
                     tag_html = get_tag_html(ai_category)
                     st.markdown(tag_html, unsafe_allow_html=True)
                     
@@ -348,13 +355,51 @@ else:
                     st.markdown(f"<a href='{item['link']}' target='_blank' style='color:#94a3b8; font-size:13px; text-decoration:none;'>🔗 View Source</a>", unsafe_allow_html=True)
 
     with col_proj_right:
-        st.markdown("<h4 style='font-weight:600; color:#f1f5f9;'>🔮 AI Synthesis Lab</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='font-weight:600; color:#f1f5f9;'>🔮 AI Synthesis Lab (Gemini Live Engine)</h4>", unsafe_allow_html=True)
+        
         if st.button(f"Execute Engine Intelligence for {selected_project}", use_container_width=True):
-            if len(saved_items) == 0: st.warning("Add elements to the desk first to perform analytical cross-referencing.")
+            if len(saved_items) == 0: 
+                st.warning("Add elements to the desk first to perform analytical cross-referencing.")
+            elif not GEMINI_KEY:
+                st.error("🚨 GEMINI_API_KEY environment variable not found. Please set your key to enable live synthesis.")
             else:
-                with st.spinner("Analyzing team curation..."):
-                    st.markdown("<h5 style='color:#34d399; font-weight:600;'>🔍 Unexploited Whitespace</h5>", unsafe_allow_html=True)
-                    st.info(f"Based on the {len(saved_items)} permanent signals saved for {selected_project}, there is a structural gap in subverting traditional category codes by leveraging human fatigue observed in active threads.")
+                with st.spinner("Gemini is reading your curated data and generating custom strategy..."):
+                    try:
+                        # 🧠 COMPILANDO OS DADOS DA MESA PARA A IA LER
+                        compiled_posts = ""
+                        for idx, item in enumerate(saved_items):
+                            compiled_posts += f"\n--- POST CURADO NÚMERO {idx+1} ---\n{item['title']}\n"
+
+                        # CONSTRUÇÃO DO PROMPT MESTRE DE ESTRATÉGIA CONTRACORRENTE
+                        master_prompt = f"""
+                        You are the strategic brain behind Countercurrent.ai, a vanguard advertising agency intelligence tool.
+                        Your job is to cross-reference a client's brief with real social internet signals curated by the team, and find an unpredictable market opportunity.
+                        
+                        CLIENT: {selected_project}
+                        STRATEGIC BRIEF OBJECTIVE: {current_brief}
+                        
+                        HERE ARE THE REAL SOCIAL MEDIA INSIGHTS CURATED BY THE TEAM FOR THIS CLIENT:
+                        {compiled_posts}
+                        
+                        Based on these specific posts and the brief, write a high-level strategic response in English. You must provide:
+                        1. UNEXPLOITED WHITE SPACE (A market opportunity or cultural gap born directly from these posts that competitors are ignoring).
+                        2. COUNTERCURRENT BRAND PROVOCATION (A bold, practical recommendation on what the brand should do or say to subvert expectations).
+                        
+                        Keep the tone sharp, executive, and highly strategic. Use clean bullet points or short text paragraphs.
+                        """
+                        
+                        # Chamada oficial do modelo do Gemini
+                        model = genai.GenerativeModel("gemini-1.5-flash")
+                        response = model.generate_content(master_prompt)
+                        
+                        log_activity(st.session_state.username, "execute_ai_synthesis", f"Generated live Gemini report for {selected_project}")
+                        
+                        # EXIBIÇÃO DOS DADOS REAIS NA TELA
+                        st.markdown("<h5 style='color:#34d399; font-weight:600;'>⚡ Live Strategic Output</h5>", unsafe_allow_html=True)
+                        st.write(response.text)
+                        
+                    except Exception as e:
+                        st.error(f"Error connecting to Gemini API: {str(e)}")
 
 # AUDIT LOG
 st.markdown("---")
