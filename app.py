@@ -325,4 +325,150 @@ if selected_project == "Master Dashboard":
     with col_right:
         st.markdown("<h3 style='font-weight:600; font-size:18px; color:#f1f5f9;'>🧠 Strategic Intelligence Matrix</h3>", unsafe_allow_html=True)
         with st.container(border=True):
-            st.markdown("<h5 style='color:#818cf8; font-
+            st.markdown("<h5 style='color:#818cf8; font-weight:600;'>⚡ 3 Cultural Shifts Identified</h5>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size:14px; color:#e2e8f0;'>1. Shift from performance to pure aesthetics in lifestyle wear.<br>2. Demand for hyper-clandestine brand experiences.<br>3. Fragmentation of mainstream sports networks.</p>", unsafe_allow_html=True)
+            st.write("")
+            st.markdown("<h5 style='color:#f43f5e; font-weight:600;'>🎯 3 Countercurrent Provocations</h5>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size:14px; color:#e2e8f0;'>1. Building 'Ugly Performance' gear to break the luxury aesthetic mold.<br>2. Ghost brands: Zero social media presence, maximum impact.<br>3. The 'Slow Sports' movement: Rewarding loyalty over fast consumption.</p>", unsafe_allow_html=True)
+
+        st.write("")
+        st.markdown("<h3 style='font-weight:600; font-size:18px; color:#f1f5f9;'>🛠️ Real-time Processing Labs</h3>", unsafe_allow_html=True)
+        tab1, tab2, tab3 = st.tabs(["⚡ AI Dispatch", "🤝 Thinker Partner", "📊 Meta-Analysis"])
+        
+        with tab1:
+            dispatch_query = st.text_input("Ask Dispatch for an instant brief:", placeholder="e.g., WNBA x Luxury Strategy for NY Liberty", key="query_dispatch")
+            if st.button("Generate Strategic Framework", use_container_width=True):
+                if not dispatch_query.strip():
+                    st.warning("Please type a directive first.")
+                elif not live_key:
+                    st.error("🚨 GEMINI_API_KEY environment variable not found inside your Streamlit Cloud Secrets panel.")
+                else:
+                    with st.spinner("Dispatching engine intelligence..."):
+                        try:
+                            genai.configure(api_key=live_key)
+                            model = genai.GenerativeModel("gemini-2.5-pro")
+                            prompt = f"You are AI Dispatch, a lightning-fast brand strategist. Based on this request: '{dispatch_query}', generate an executive 3-step strategic framework in English with unexpected, bold angles."
+                            response = model.generate_content(prompt)
+                            st.markdown("<h5 style='color:#818cf8;'>⚡ Live Dispatch Brief</h5>", unsafe_allow_html=True)
+                            st.write(response.text)
+                        except Exception as e: st.error(f"Error executing Gemini: {str(e)}")
+
+        with tab2:
+            thinker_challenge = st.text_area("Drop a macro brand challenge to debate:", placeholder="e.g., How can a heritage legacy brand appeal to Gen Z without looking cringe?", key="query_thinker")
+            if st.button("Debate with Thinker Partner", use_container_width=True):
+                if not thinker_challenge.strip():
+                    st.warning("Please input a challenge context.")
+                elif not live_key:
+                    st.error("🚨 GEMINI_API_KEY environment variable not found inside your Streamlit Cloud Secrets panel.")
+                else:
+                    with st.spinner("Consulting strategic partner..."):
+                        try:
+                            genai.configure(api_key=live_key)
+                            model = genai.GenerativeModel("gemini-2.5-pro")
+                            prompt = f"You are an iconoclastic, sharp, and cynical Brand Strategy Director. Challenge this premise: '{thinker_challenge}'. Provide 3 counter-intuitive, raw, and high-impact intellectual provocations in English that subvert common sense."
+                            response = model.generate_content(prompt)
+                            st.markdown("<h5 style='color:#f43f5e;'>🤝 Partner Debriefing</h5>", unsafe_allow_html=True)
+                            st.write(response.text)
+                        except Exception as e: st.error(f"Error executing Gemini: {str(e)}")
+
+        with tab3:
+            st.markdown("<p style='font-size:14px; color:#94a3b8;'>Cross-reference all loaded signals in the feed to extract deep macro cultural pattern overlaps.</p>", unsafe_allow_html=True)
+            if st.button("Execute Cross-Feed Meta-Analysis", use_container_width=True):
+                if not all_signals:
+                    st.warning("Feed is empty. No signals to parse.")
+                elif not live_key:
+                    st.error("🚨 GEMINI_API_KEY environment variable not found inside your Streamlit Cloud Secrets panel.")
+                else:
+                    with st.spinner("Processing metadata across all market sectors..."):
+                        try:
+                            genai.configure(api_key=live_key)
+                            model = genai.GenerativeModel("gemini-2.5-pro")
+                            
+                            feed_text = ""
+                            for s in all_signals[:15]:
+                                feed_text += f"\n- [{s.get('source')} | Client: {s.get('client_tag')}]: {s.get('title')} -> {s.get('content')}\n"
+                                
+                            prompt = f"Analyze these raw fragmented data points across multiple industries:\n{feed_text}\n\nFind ONE single underlying cultural or human pattern that connects these seemingly unrelated insights. Explain the pattern and tell us how an avant-garde agency can weaponize it. Write in sharp English."
+                            response = model.generate_content(prompt)
+                            st.markdown("<h5 style='color:#34d399;'>📊 Meta-Analysis Report</h5>", unsafe_allow_html=True)
+                            st.write(response.text)
+                        except Exception as e: st.error(f"Error executing Gemini: {str(e)}")
+
+# PÁGINAS DOS PROJETOS
+else:
+    with st.container(border=True):
+        st.markdown("<h4 style='font-weight:600; color:#f1f5f9;'>📋 Project Workspace Brief</h4>", unsafe_allow_html=True)
+        current_brief = st.text_area("Project Objectives:", value=st.session_state.project_briefs[selected_project], key="brief_area", label_visibility="collapsed")
+        if st.button("Lock Strategic Brief"):
+            st.session_state.project_briefs[selected_project] = current_brief
+            st.toast("Brief updated!")
+
+    st.markdown("---")
+    col_proj_left, col_proj_right = st.columns([1, 1])
+    
+    with col_proj_left:
+        st.markdown("<h4 style='font-weight:600; color:#f1f5f9;'>🗂️ Research Desk (Curation Vault)</h4>", unsafe_allow_html=True)
+        saved_items = project_vault[selected_project]
+        
+        if len(saved_items) == 0: st.info("This desk is currently clean. Add signals from the Master Feed.")
+        else:
+            for item in saved_items:
+                with st.container(border=True):
+                    st.markdown(f"<span style='color:#818cf8; font-size:12px;'><b>[{item['category']}]</b> — Curated by {item['saved_by'].capitalize()}</span>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='color:#e2e8f0; font-size:14px; margin-top:8px;'>{item['title']}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<a href='{item['link']}' target='_blank' style='color:#94a3b8; font-size:13px; text-decoration:none;'>🔗 View Source</a>", unsafe_allow_html=True)
+
+    with col_proj_right:
+        st.markdown("<h4 style='font-weight:600; color:#f1f5f9;'>🔮 AI Synthesis Lab (Gemini Live Engine)</h4>", unsafe_allow_html=True)
+        
+        if st.button(f"Execute Engine Intelligence for {selected_project}", use_container_width=True):
+            if len(saved_items) == 0: 
+                st.warning("Add elements to the desk first to perform analytical cross-referencing.")
+            elif not live_key:
+                st.error("🚨 GEMINI_API_KEY environment variable not found inside your Streamlit Cloud Secrets panel.")
+            else:
+                with st.spinner("Gemini 2.5 Pro is compiling workspace nodes and engineering creative counter-brief..."):
+                    try:
+                        genai.configure(api_key=live_key)
+                        
+                        compiled_posts = ""
+                        for idx, item in enumerate(saved_items):
+                            compiled_posts += f"\n--- CURATED POST {idx+1} ---\n{item['title']}\n"
+
+                        master_prompt = f"""
+                        You are the strategic brain behind Countercurrent.ai, a vanguard advertising agency intelligence tool.
+                        Your job is to cross-reference a client's brief with real social internet signals curated by the team, and find an unpredictable market opportunity.
+                        
+                        CLIENT: {selected_project}
+                        STRATEGIC BRIEF OBJECTIVE: {current_brief}
+                        
+                        HERE ARE THE REAL SOCIAL MEDIA INSIGHTS CURATED BY THE TEAM FOR THIS CLIENT:
+                        {compiled_posts}
+                        
+                        Based on these specific posts and the brief, write a high-level strategic response in English. You must provide:
+                        1. UNEXPLOITED WHITE SPACE (A market opportunity or cultural gap born directly from these posts that competitors are ignoring).
+                        2. COUNTERCURRENT BRAND PROVOCATION (A bold, practical recommendation on what the brand should do or say to subvert expectations).
+                        
+                        Keep the tone sharp, executive, and highly strategic. Use clean bullet points or short text paragraphs.
+                        """
+                        
+                        model = genai.GenerativeModel("gemini-2.5-pro")
+                        response = model.generate_content(master_prompt)
+                        
+                        log_activity(st.session_state.username, "execute_ai_synthesis", f"Generated live Gemini 2.5 Pro report for {selected_project}")
+                        
+                        st.markdown("<h5 style='color:#34d399; font-weight:600;'>⚡ Live Strategic Output (Gemini 2.5 Pro)</h5>", unsafe_allow_html=True)
+                        st.write(response.text)
+                        
+                    except Exception as e:
+                        st.error(f"Error executing Gemini runtime generation: {str(e)}")
+
+# AUDIT LOG
+st.markdown("---")
+with st.expander("📄 System Governance & Audit Log"):
+    try:
+        with open("activity_log.jsonl", "r", encoding="utf-8") as f:
+            for line in reversed(f.readlines()):
+                data = json.loads(line.strip())
+                st.text(f"[{data['timestamp']}] {data['user'].upper()} executed '{data['action']}' → {data['details']}")
+    except: st.info("No activity recorded yet.")
