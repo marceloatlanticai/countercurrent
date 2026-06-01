@@ -59,7 +59,8 @@ def save_to_vault(project, item):
         f.write(json.dumps(entry) + "\n")
 
 def load_from_vault():
-    vault_data = {"Haypp": [], "Likepost": [], "Sallve": [], "Oceano Azul": [], "Pinterest": []}
+    # 🌟 Atualizado para incluir Heinz Soup como primeiro cliente
+    vault_data = {"Heinz Soup": [], "Haypp": [], "Likepost": [], "Sallve": [], "Oceano Azul": [], "Pinterest": []}
     if os.path.exists(VAULT_PATH):
         with open(VAULT_PATH, "r", encoding="utf-8") as f:
             for line in f:
@@ -72,6 +73,7 @@ def load_from_vault():
 
 if "project_briefs" not in st.session_state:
     st.session_state.project_briefs = {
+        "Heinz Soup": "Analyze modern convenience vs. heritage comfort food. Track shifts in quick meal culture, winter comfort trends, and pantry aesthetics.",
         "Haypp": "Search for answers regarding nicotine pouch market disruption and alternative cultural patterns.",
         "Likepost": "Analyze micro-influencer exhaustion and the friction against traditional aesthetic feeds.",
         "Sallve": "Understand the shift toward chaotic curations, skin-intellectual trends, and clean beauty barriers.",
@@ -84,9 +86,9 @@ def get_ai_category(title, content):
     text = (title + " " + content).lower()
     rules = st.session_state.custom_prompt_rules.lower()
     if rules and any(word in text for word in rules.split()): return "Custom Strategic Alert"
-    if "fashion" in text or "aesthetic" in text or "shift" in text or "core" in text or "beauty" in text: return "Cultural Tension"
-    elif "competitor" in text or "nike" in text or "brand" in text or "market" in text or "cosméticos" in text: return "Competitor Activity"
-    elif "barrier" in text or "fatigue" in text or "rejecting" in text or "drop" in text or "pouches" in text: return "Consumer Barrier Identified"
+    if "fashion" in text or "aesthetic" in text or "shift" in text or "core" in text or "beauty" in text or "comfort" in text: return "Cultural Tension"
+    elif "competitor" in text or "nike" in text or "brand" in text or "market" in text or "campbell" in text or "soup" in text: return "Competitor Activity"
+    elif "barrier" in text or "fatigue" in text or "rejecting" in text or "drop" in text or "sodium" in text or "processed" in text: return "Consumer Barrier Identified"
     else: return "Company Update/Earnings"
 
 # Mapeamento de Classes CSS para as Tags
@@ -133,7 +135,8 @@ st.sidebar.write(f"Logged in as: **{st.session_state.username.capitalize()}**")
 st.sidebar.markdown("---")
 
 st.sidebar.subheader("📁 Ongoing Projects")
-project_options = ["Master Dashboard", "Haypp", "Likepost", "Sallve", "Oceano Azul", "Pinterest"]
+# 🌟 Heinz Soup adicionada como o primeiro cliente na navegação
+project_options = ["Master Dashboard", "Heinz Soup", "Haypp", "Likepost", "Sallve", "Oceano Azul", "Pinterest"]
 selected_project = st.sidebar.selectbox("Select Research Desk:", project_options)
 
 if "current_project" not in st.session_state: st.session_state.current_project = "Master Dashboard"
@@ -173,9 +176,9 @@ if selected_project == "Master Dashboard":
         with col_f1:
             source_filter = st.multiselect("Filter Source:", options=["All Networks", "TikTok", "Reddit", "Pinterest", "BlueSky", "Twitter/X"], default=["All Networks"])
         with col_f2:
-            client_filter = st.multiselect("Filter Target Client:", options=["All Clients", "Ny_liberty", "Haypp", "Likepost", "Sallve", "Oceano_azul", "Pinterest"], default=["All Clients"])
+            # 🌟 Heinz soup incluída no filtro de clientes alalvo
+            client_filter = st.multiselect("Filter Target Client:", options=["All Clients", "Heinz_soup", "Ny_liberty", "Haypp", "Likepost", "Sallve", "Oceano_azul", "Pinterest"], default=["All Clients"])
 
-        # 🛠️ NOVA EVOLUÇÃO: Terceiro filtro dedicado para as Categorias da IA (Fica logo abaixo dos dois primeiros)
         category_filter = st.multiselect(
             "Filter AI Strategic Category:",
             options=["All Categories", "Cultural Tension", "Competitor Activity", "Consumer Barrier Identified", "Custom Strategic Alert", "Company Update/Earnings"],
@@ -188,23 +191,19 @@ if selected_project == "Master Dashboard":
             st.warning("⚠️ No data found. Run 'python3 ingestion.py' first!")
             filtered_signals = []
         else:
-            # Funil de Filtro 1: Redes
             if "All Networks" in source_filter or not source_filter: stage_1 = all_signals
             else: stage_1 = [s for s in all_signals if s.get("source") in source_filter]
             
-            # Funil de Filtro 2: Clientes
             if "All Clients" in client_filter or not client_filter: stage_2 = stage_1
             else:
                 client_filter_clean = [c.lower() for c in client_filter]
                 stage_2 = [s for s in stage_1 if s.get("client_tag", "").lower() in client_filter_clean]
                 
-            # Funil de Filtro 3: Categorias da IA (Adicionado dinamicamente à listagem)
             if "All Categories" in category_filter or not category_filter:
                 filtered_signals = stage_2
             else:
                 filtered_signals = []
                 for sig in stage_2:
-                    # Calcula a categoria em tempo real para bater com o filtro selecionado
                     real_cat = get_ai_category(sig.get("title", ""), sig.get("content", ""))
                     if real_cat in category_filter:
                         filtered_signals.append(sig)
@@ -217,13 +216,11 @@ if selected_project == "Master Dashboard":
                 client_display = sig.get("client_tag", "General").replace("_", " ").capitalize()
                 
                 with st.container(border=True):
-                    # Ingestão de metadados limpos
                     st.markdown(f"📱 **{sig.get('source')}** | 🏢 *Client: {client_display}*")
                     
-                    # 🛠️ NOVA EVOLUÇÃO: Renderização do Rounded Rectangle Colorido baseado na Categoria
                     tag_html = get_tag_html(ai_category)
                     st.markdown(tag_html, unsafe_allow_html=True)
-                    st.write("") # Pequeno espaçamento estético
+                    st.write("")
                     
                     st.markdown(f"**{sig.get('title')}**")
                     st.write(sig.get('content'))
@@ -233,7 +230,8 @@ if selected_project == "Master Dashboard":
                     
                     col_btn1, col_btn2 = st.columns([1, 1])
                     with col_btn1:
-                        target_project = st.selectbox("Send to project:", ["Haypp", "Likepost", "Sallve", "Oceano Azul", "Pinterest"], key=f"sel_{i}")
+                        # 🌟 Adicionada Heinz Soup na seleção de envio rápido por card
+                        target_project = st.selectbox("Send to project:", ["Heinz Soup", "Haypp", "Likepost", "Sallve", "Oceano Azul", "Pinterest"], key=f"sel_{i}")
                     with col_btn2:
                         st.write("")
                         if st.button("📌 Add to Desk", key=f"btn_{i}"):
