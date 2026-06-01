@@ -404,7 +404,7 @@ else:
                             Keep the tone sharp, executive, and highly strategic. Use clean bullet points or short text paragraphs.
                             """
                             
-                            model = genai.GenerativeModel("gemini-1.5-pro")
+                            model = genai.GenerativeModel("gemini-2.5-pro")
                             response = model.generate_content(master_prompt)
                             
                             log_activity(st.session_state.username, "execute_ai_synthesis", f"Generated live Gemini Pro report for {selected_project}")
