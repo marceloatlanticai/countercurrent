@@ -189,7 +189,7 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==========================================
-# 3. BARRA LATERAL (Botão Safe Removido)
+# 3. BARRA LATERAL
 # ==========================================
 st.sidebar.markdown("<h2 style='font-weight:700; margin-bottom:0px;'>⟳ Countercurrent</h2>", unsafe_allow_html=True)
 st.sidebar.markdown(f"Active user: <span style='color:#6366f1; font-weight:600;'>{st.session_state.username.capitalize()}</span>", unsafe_allow_html=True)
@@ -245,36 +245,26 @@ if selected_project == "Master Dashboard":
 
         all_signals = load_ingested_signals()
 
-        # 🛠️ SISTEMA DE CAPTURA BRUTA (Driblando instabilidade do Streamlit Secrets)
-                live_key = ""
+        if not all_signals:
+            st.warning("⚠️ No data found. Run 'python3 ingestion.py' first!")
+            filtered_signals = []
+        else:
+            if "All Networks" in source_filter or not source_filter: stage_1 = all_signals
+            else: stage_1 = [s for s in all_signals if s.get("source") in source_filter]
+            
+            if "All Clients" in client_filter or not client_filter: stage_2 = stage_1
+            else:
+                client_filter_clean = [c.lower() for c in client_filter]
+                stage_2 = [s for s in stage_1 if s.get("client_tag", "").lower() in client_filter_clean]
                 
-                # Tenta ler o arquivo de segredos bruto do sistema operacional do Streamlit Cloud
-                try:
-                    import pathlib
-                    # O Streamlit Cloud guarda o arquivo real de secrets exatamente neste caminho oculto do servidor
-                    secrets_path = pathlib.Path(".streamlit/secrets.toml")
-                    if secrets_path.exists():
-                        with open(secrets_path, "r", encoding="utf-8") as f:
-                            for line in f:
-                                if "GEMINI_API_KEY" in line:
-                                    live_key = line.split("=")[1].replace('"', '').replace("'", "").strip()
-                except:
-                    pass
-
-                # Se a busca bruta falhar, roda os fallbacks padrão em silêncio
-                if not live_key:
-                    try: live_key = st.secrets.get("GEMINI_API_KEY", "")
-                    except: pass
-                if not live_key:
-                    live_key = os.environ.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
-
-                # Se absolutamente tudo falhar, ele assume a chave estática (Se quiser colar a sua direto aqui entre aspas como plano C, sinta-se livre!)
-                if not live_key:
-                    live_key = "COLE_SUA_CHAVE_AQUI_SE_QUISER_BLINDAR"
-
-                if live_key == "COLE_SUA_CHAVE_AQUI_SE_QUISER_BLINDAR" or not live_key:
-                    st.error("🚨 GEMINI_API_KEY environment variable not found. Please ensure it is correctly defined inside your Streamlit Cloud Secrets panel.")
-                else:
+            if "All Categories" in category_filter or not category_filter:
+                filtered_signals = stage_2
+            else:
+                filtered_signals = []
+                for sig in stage_2:
+                    real_cat = get_ai_category(sig.get("title", ""), sig.get("content", ""))
+                    if real_cat in category_filter:
+                        filtered_signals.append(sig)
 
         st.caption(f"Showing {len(filtered_signals)} deep signals from database based on combined parameters.")
 
@@ -360,37 +350,54 @@ else:
             if len(saved_items) == 0: 
                 st.warning("Add elements to the desk first to perform analytical cross-referencing.")
             else:
-                # 🛠️ CAPTURA AUTOMÁTICA EM SEGUNDO PLANO (Sem botões extras ou campo manual)
+                # 🛠️ SISTEMA DE CAPTURA DE CHAVE (Varredura de Segurança com Injeção Forçada)
                 live_key = ""
                 
+                # Passo A: Tenta vasculhar o arquivo bruto no servidor do Streamlit
                 try:
-                    # Varredura primária: Estrutura nativa de Secrets do Streamlit Cloud
-                    live_key = st.secrets["GEMINI_API_KEY"]
+                    import pathlib
+                    secrets_path = pathlib.Path(".streamlit/secrets.toml")
+                    if secrets_path.exists():
+                        with open(secrets_path, "r", encoding="utf-8") as f:
+                            for line in f:
+                                if "GEMINI_API_KEY" in line:
+                                    live_key = line.split("=")[1].replace('"', '').replace("'", "").strip()
                 except:
-                    try:
-                        # Varredura secundária: Método get suave do Streamlit
-                        live_key = st.secrets.get("GEMINI_API_KEY", "")
-                    except:
-                        pass
-                
-                # Varredura terciária: Variáveis locais e operacionais do servidor de nuvem
+                    pass
+
+                # Passo B: Se o arquivo bruto falhar, tenta ler do comando nativo do Streamlit
                 if not live_key:
-                    live_key = os.getenv("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
+                    try:
+                        live_key = st.secrets["GEMINI_API_KEY"]
+                    except:
+                        try:
+                            live_key = st.secrets.get("GEMINI_API_KEY", "")
+                        except:
+                            pass
+                
+                # Passo C: Fallback para variáveis de ambiente operacionais
+                if not live_key:
+                    live_key = os.environ.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
+
+                # 🛑 CONDIÇÃO COMPORTAMENTAL SE TUDO FALHAR: Se a nuvem do Streamlit der block total, 
+                # você pode colar a sua chave entre as aspas na linha abaixo para travar em modo tanque de guerra:
+                if not live_key:
+                    live_key = ""
 
                 if not live_key:
-                    st.error("🚨 GEMINI_API_KEY environment variable not found. Please ensure it is correctly defined inside your Streamlit Cloud Secrets panel as GEMINI_API_KEY = 'your_key'.")
+                    st.error("🚨 GEMINI_API_KEY environment variable not found. Please ensure it is correctly defined inside your Streamlit Cloud Secrets panel.")
                 else:
                     with st.spinner("Gemini 2.5 Pro is compiling workspace nodes and engineering creative counter-brief..."):
                         try:
-                            # Configuração imediata da API Key extraída
+                            # Configuração imediata do motor no escopo do clique
                             genai.configure(api_key=live_key)
                             
-                            # Compilação dos posts em lote para leitura contextual estruturada
+                            # Compilação dos dados em lote
                             compiled_posts = ""
                             for idx, item in enumerate(saved_items):
                                 compiled_posts += f"\n--- CURATED POST {idx+1} ---\n{item['title']}\n"
 
-                            # Prompt Mestre Alinhado
+                            # Prompt Mestre de Estratégia
                             master_prompt = f"""
                             You are the strategic brain behind Countercurrent.ai, a vanguard advertising agency intelligence tool.
                             Your job is to cross-reference a client's brief with real social internet signals curated by the team, and find an unpredictable market opportunity.
@@ -408,13 +415,13 @@ else:
                             Keep the tone sharp, executive, and highly strategic. Use clean bullet points or short text paragraphs.
                             """
                             
-                            # 🚀 ATUALIZADO DEFINITIVAMENTE PARA O GEMINI 2.5 PRO
+                            # Chamada oficial e atualizada para o Gemini 2.5 Pro
                             model = genai.GenerativeModel("gemini-2.5-pro")
                             response = model.generate_content(master_prompt)
                             
                             log_activity(st.session_state.username, "execute_ai_synthesis", f"Generated live Gemini 2.5 Pro report for {selected_project}")
                             
-                            # Renderização elegante do output gerado em tempo real
+                            # Renderização na tela do Output Estratégico Real
                             st.markdown("<h5 style='color:#34d399; font-weight:600;'>⚡ Live Strategic Output (Gemini 2.5 Pro)</h5>", unsafe_allow_html=True)
                             st.write(response.text)
                             
