@@ -189,7 +189,7 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==========================================
-# 3. BARRA LATERAL
+# 3. BARRA LATERAL (Botão Safe Removido)
 # ==========================================
 st.sidebar.markdown("<h2 style='font-weight:700; margin-bottom:0px;'>⟳ Countercurrent</h2>", unsafe_allow_html=True)
 st.sidebar.markdown(f"Active user: <span style='color:#6366f1; font-weight:600;'>{st.session_state.username.capitalize()}</span>", unsafe_allow_html=True)
@@ -212,11 +212,6 @@ if st.sidebar.button("Update Engine Logic", use_container_width=True):
     log_activity(st.session_state.username, "tweak_prompt", f"Updated prompt rules")
     st.sidebar.success("Engine logic updated!")
     st.rerun()
-
-# 🔐 GAVETA DE EMERGÊNCIA: FALLBACK PARA CASO O STREAMLIT CLOUD IGNORE OS SECRETS
-st.sidebar.markdown("---")
-with st.sidebar.expander("🛠️ Connection Fail-Safe"):
-    manual_key = st.text_input("Manual Gemini Key (Optional):", type="password", placeholder="Paste AIzaSy... here if cloud fails")
 
 st.sidebar.markdown("---")
 if st.sidebar.button("Logout Station", use_container_width=True):
@@ -355,38 +350,37 @@ else:
             if len(saved_items) == 0: 
                 st.warning("Add elements to the desk first to perform analytical cross-referencing.")
             else:
-                # 🛠️ SISTEMA MULTI-VARREDURA DE SEGURANÇA
+                # 🛠️ CAPTURA AUTOMÁTICA EM SEGUNDO PLANO (Sem botões extras ou campo manual)
                 live_key = ""
                 
-                # Método 1: Verifica se você digitou na gaveta de emergência da barra lateral
-                if manual_key.strip():
-                    live_key = manual_key.strip()
-                # Método 2: Formato Atributo do Streamlit
-                elif hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
+                try:
+                    # Varredura primária: Estrutura nativa de Secrets do Streamlit Cloud
                     live_key = st.secrets["GEMINI_API_KEY"]
-                # Método 3: Formato Dicionário do Streamlit
-                else:
+                except:
                     try:
+                        # Varredura secundária: Método get suave do Streamlit
                         live_key = st.secrets.get("GEMINI_API_KEY", "")
                     except:
                         pass
                 
-                # Método 4: Variável de ambiente do sistema operacional
+                # Varredura terciária: Variáveis locais e operacionais do servidor de nuvem
                 if not live_key:
-                    live_key = os.environ.get("GEMINI_API_KEY", "")
+                    live_key = os.getenv("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 
                 if not live_key:
-                    st.error("🚨 GEMINI_API_KEY not detected by Streamlit core. Please use the 'Connection Fail-Safe' expander on the sidebar to paste it manually.")
+                    st.error("🚨 GEMINI_API_KEY environment variable not found. Please ensure it is correctly defined inside your Streamlit Cloud Secrets panel as GEMINI_API_KEY = 'your_key'.")
                 else:
-                    with st.spinner("Gemini Pro is compiling workspace nodes and engineering creative counter-brief..."):
+                    with st.spinner("Gemini 2.5 Pro is compiling workspace nodes and engineering creative counter-brief..."):
                         try:
-                            # Configura e limpa instâncias antigas injetando a chave na hora do clique
+                            # Configuração imediata da API Key extraída
                             genai.configure(api_key=live_key)
                             
+                            # Compilação dos posts em lote para leitura contextual estruturada
                             compiled_posts = ""
                             for idx, item in enumerate(saved_items):
                                 compiled_posts += f"\n--- CURATED POST {idx+1} ---\n{item['title']}\n"
 
+                            # Prompt Mestre Alinhado
                             master_prompt = f"""
                             You are the strategic brain behind Countercurrent.ai, a vanguard advertising agency intelligence tool.
                             Your job is to cross-reference a client's brief with real social internet signals curated by the team, and find an unpredictable market opportunity.
@@ -404,11 +398,13 @@ else:
                             Keep the tone sharp, executive, and highly strategic. Use clean bullet points or short text paragraphs.
                             """
                             
+                            # 🚀 ATUALIZADO DEFINITIVAMENTE PARA O GEMINI 2.5 PRO
                             model = genai.GenerativeModel("gemini-2.5-pro")
                             response = model.generate_content(master_prompt)
                             
-                            log_activity(st.session_state.username, "execute_ai_synthesis", f"Generated live Gemini Pro report for {selected_project}")
+                            log_activity(st.session_state.username, "execute_ai_synthesis", f"Generated live Gemini 2.5 Pro report for {selected_project}")
                             
+                            # Renderização elegante do output gerado em tempo real
                             st.markdown("<h5 style='color:#34d399; font-weight:600;'>⚡ Live Strategic Output (Gemini 2.5 Pro)</h5>", unsafe_allow_html=True)
                             st.write(response.text)
                             
