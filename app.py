@@ -93,22 +93,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# CONFIGURAÇÃO DO GEMINI LIVE ENGINE
-# ==========================================
-# Tenta puxar a chave do ambiente; caso contrário, usa uma string vazia para tratar depois
-GEMINI_KEY = ""
-
-# Primeiro tenta puxar do formato oficial de Secrets do Streamlit Cloud
-if "GEMINI_API_KEY" in st.secrets:
-    GEMINI_KEY = st.secrets["GEMINI_API_KEY"]
-# Se não achar (ex: rodando local), tenta buscar do ambiente operacional
-elif os.environ.get("GEMINI_API_KEY"):
-    GEMINI_KEY = os.environ.get("GEMINI_API_KEY")
-
-if GEMINI_KEY:
-    genai.configure(api_key=GEMINI_KEY)
-
-# ==========================================
 # 1. SISTEMA DE USUÁRIOS E CREDENCIAIS
 # ==========================================
 USER_CREDENTIALS = { "marcelo": "senha123", "pat": "pat2026", "marco": "marco2026", "joao": "joao2026" }
@@ -368,46 +352,57 @@ else:
         if st.button(f"Execute Engine Intelligence for {selected_project}", use_container_width=True):
             if len(saved_items) == 0: 
                 st.warning("Add elements to the desk first to perform analytical cross-referencing.")
-            elif not GEMINI_KEY:
-                st.error("🚨 GEMINI_API_KEY environment variable not found. Please set your key to enable live synthesis.")
             else:
-                with st.spinner("Gemini is reading your curated data and generating custom strategy..."):
-                    try:
-                        # 🧠 COMPILANDO OS DADOS DA MESA PARA A IA LER
-                        compiled_posts = ""
-                        for idx, item in enumerate(saved_items):
-                            compiled_posts += f"\n--- POST CURADO NÚMERO {idx+1} ---\n{item['title']}\n"
+                # 🛠️ CAPTURA DINÂMICA DA CHAVE NOS SECRETS DO STREAMLIT CLOUD
+                current_key = ""
+                if "GEMINI_API_KEY" in st.secrets:
+                    current_key = st.secrets["GEMINI_API_KEY"]
+                elif os.environ.get("GEMINI_API_KEY"):
+                    current_key = os.environ.get("GEMINI_API_KEY")
 
-                        # CONSTRUÇÃO DO PROMPT MESTRE DE ESTRATÉGIA CONTRACORRENTE
-                        master_prompt = f"""
-                        You are the strategic brain behind Countercurrent.ai, a vanguard advertising agency intelligence tool.
-                        Your job is to cross-reference a client's brief with real social internet signals curated by the team, and find an unpredictable market opportunity.
-                        
-                        CLIENT: {selected_project}
-                        STRATEGIC BRIEF OBJECTIVE: {current_brief}
-                        
-                        HERE ARE THE REAL SOCIAL MEDIA INSIGHTS CURATED BY THE TEAM FOR THIS CLIENT:
-                        {compiled_posts}
-                        
-                        Based on these specific posts and the brief, write a high-level strategic response in English. You must provide:
-                        1. UNEXPLOITED WHITE SPACE (A market opportunity or cultural gap born directly from these posts that competitors are ignoring).
-                        2. COUNTERCURRENT BRAND PROVOCATION (A bold, practical recommendation on what the brand should do or say to subvert expectations).
-                        
-                        Keep the tone sharp, executive, and highly strategic. Use clean bullet points or short text paragraphs.
-                        """
-                        
-                        # Chamada oficial do modelo do Gemini
-                        model = genai.GenerativeModel("gemini-1.5-pro")
-                        response = model.generate_content(master_prompt)
-                        
-                        log_activity(st.session_state.username, "execute_ai_synthesis", f"Generated live Gemini report for {selected_project}")
-                        
-                        # EXIBIÇÃO DOS DADOS REAIS NA TELA
-                        st.markdown("<h5 style='color:#34d399; font-weight:600;'>⚡ Live Strategic Output</h5>", unsafe_allow_html=True)
-                        st.write(response.text)
-                        
-                    except Exception as e:
-                        st.error(f"Error connecting to Gemini API: {str(e)}")
+                if not current_key:
+                    st.error("🚨 GEMINI_API_KEY environment variable not found. Please set your key to enable live synthesis.")
+                else:
+                    with st.spinner("Gemini Pro is reading your curated data and generating custom strategy..."):
+                        try:
+                            # Inicializa o motor com a chave validada na hora
+                            genai.configure(api_key=current_key)
+                            
+                            # Compila todos os posts salvos em texto puro para a IA ler
+                            compiled_posts = ""
+                            for idx, item in enumerate(saved_items):
+                                compiled_posts += f"\n--- POST CURADO NÚMERO {idx+1} ---\n{item['title']}\n"
+
+                            # Prompt Avançado de Estratégia Contracorrente
+                            master_prompt = f"""
+                            You are the strategic brain behind Countercurrent.ai, a vanguard advertising agency intelligence tool.
+                            Your job is to cross-reference a client's brief with real social internet signals curated by the team, and find an unpredictable market opportunity.
+                            
+                            CLIENT: {selected_project}
+                            STRATEGIC BRIEF OBJECTIVE: {current_brief}
+                            
+                            HERE ARE THE REAL SOCIAL MEDIA INSIGHTS CURATED BY THE TEAM FOR THIS CLIENT:
+                            {compiled_posts}
+                            
+                            Based on these specific posts and the brief, write a high-level strategic response in English. You must provide:
+                            1. UNEXPLOITED WHITE SPACE (A market opportunity or cultural gap born directly from these posts that competitors are ignoring).
+                            2. COUNTERCURRENT BRAND PROVOCATION (A bold, practical recommendation on what the brand should do or say to subvert expectations).
+                            
+                            Keep the tone sharp, executive, and highly strategic. Use clean bullet points or short text paragraphs.
+                            """
+                            
+                            # Chamada oficial ao modelo mais avançado da Google para textos estratégicos
+                            model = genai.GenerativeModel("gemini-1.5-pro")
+                            response = model.generate_content(master_prompt)
+                            
+                            log_activity(st.session_state.username, "execute_ai_synthesis", f"Generated live Gemini Pro report for {selected_project}")
+                            
+                            # Exibição do relatório estratégico gerado ao vivo
+                            st.markdown("<h5 style='color:#34d399; font-weight:600;'>⚡ Live Strategic Output (Gemini 1.5 Pro)</h5>", unsafe_allow_html=True)
+                            st.write(response.text)
+                            
+                        except Exception as e:
+                            st.error(f"Error connecting to Gemini API: {str(e)}")
 
 # AUDIT LOG
 st.markdown("---")
