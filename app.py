@@ -4,7 +4,7 @@ import json
 import os
 
 # ==========================================
-# CONFIGURAÇÃO DA PÁGINA
+# CONFIGURAÇÃO DA PÁGINA (Premium Theme)
 # ==========================================
 st.set_page_config(
     page_title="Countercurrent.ai — Dashboard",
@@ -12,23 +12,83 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilização CSS para as Tags Coloridas (Rounded Rectangles)
+# 🎨 CAMADA DE DESIGN: Google AI Studio UI Inspired Style
 st.markdown("""
 <style>
+    /* Importando fonte moderna inter */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* Customização dos Cards do Feed (Efeito Neumórfico Escuro) */
+    div[data-testid="stCard"], .st-emotion-cache-1r6slb0, .st-emotion-cache-6q9sum {
+        background-color: #1e2025 !important;
+        border: 1px solid #2d3139 !important;
+        border-radius: 16px !important;
+        padding: 24px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+        margin-bottom: 16px !important;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    
+    div[data-testid="stCard"]:hover {
+        border-color: #4f46e5 !important; /* Brilho roxo ao passar o mouse */
+        transform: translateY(-2px);
+    }
+
+    /* Estilização dos Rounded Rectangles (Tags de Categoria) */
     .tag {
         display: inline-block;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: bold;
-        color: white;
-        margin-right: 8px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        color: #ffffff;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
-    .tag-tension { background-color: #ef4444; } /* Vermelho */
-    .tag-competitor { background-color: #f59e0b; color: #1e293b; } /* Amarelo */
-    .tag-barrier { background-color: #3b82f6; } /* Azul */
-    .tag-custom { background-color: #a855f7; } /* Roxo */
-    .tag-general { background-color: #64748b; } /* Cinza */
+    .tag-tension { background: linear-gradient(135deg, #ef4444, #b91c1c); } /* Vermelho */
+    .tag-competitor { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; } /* Amarelo */
+    .tag-barrier { background: linear-gradient(135deg, #3b82f6, #1d4ed8); } /* Azul */
+    .tag-custom { background: linear-gradient(135deg, #a855f7, #6b21a8); } /* Roxo */
+    .tag-general { background: linear-gradient(135deg, #64748b, #475569); } /* Cinza */
+
+    /* Botões Premium Customizados */
+    .stButton>button {
+        background: linear-gradient(135deg, #4f46e5, #3730a3) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 10px 20px !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.3px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2) !important;
+    }
+    
+    .stButton>button:hover {
+        background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
+        box-shadow: 0 6px 12px rgba(79, 70, 229, 0.4) !important;
+        transform: translateY(-1px);
+    }
+    
+    /* Inputs, Selectboxes e Text Areas elegantes */
+    .stTextArea textarea, .stTextInput input, .stSelectbox div[data-baseweb="select"] {
+        background-color: #121417 !important;
+        border: 1px solid #2d3139 !important;
+        border-radius: 10px !important;
+        color: #e2e8f0 !important;
+    }
+    
+    /* Scrollbars mais finas e elegantes */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f1115; }
+    ::-webkit-scrollbar-thumb { background: #2d3139; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f46e5; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -59,7 +119,6 @@ def save_to_vault(project, item):
         f.write(json.dumps(entry) + "\n")
 
 def load_from_vault():
-    # 🌟 Atualizado para incluir Heinz Soup como primeiro cliente
     vault_data = {"Heinz Soup": [], "Haypp": [], "Likepost": [], "Sallve": [], "Oceano Azul": [], "Pinterest": []}
     if os.path.exists(VAULT_PATH):
         with open(VAULT_PATH, "r", encoding="utf-8") as f:
@@ -109,16 +168,20 @@ def load_ingested_signals():
     return list(reversed(signals))
 
 # ==========================================
-# 2. TELA DE LOGIN
+# 2. TELA DE LOGIN (Premium Card Style)
 # ==========================================
 if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align: center;'>⟳ Countercurrent.ai</h1>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 2, 1])
+    st.write("")
+    st.write("")
+    st.markdown("<h1 style='text-align: center; font-weight:700; color:#f8fafc;'>⟳ Countercurrent.ai</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color:#94a3b8;'>Intelligence engine for brand strategy</p>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        with st.form("login_form"):
+        with st.container(border=True):
             username_input = st.text_input("Username").strip().lower()
             password_input = st.text_input("Password", type="password")
-            if st.form_submit_button("Login", use_container_width=True):
+            st.write("")
+            if st.button("Access Workstation", use_container_width=True):
                 if username_input in USER_CREDENTIALS and USER_CREDENTIALS[username_input] == password_input:
                     st.session_state.logged_in = True
                     st.session_state.username = username_input
@@ -128,14 +191,13 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==========================================
-# 3. BARRA LATERAL
+# 3. BARRA LATERAL (Clean Sidebar Look)
 # ==========================================
-st.sidebar.title("⟳ Countercurrent.ai")
-st.sidebar.write(f"Logged in as: **{st.session_state.username.capitalize()}**")
+st.sidebar.markdown("<h2 style='font-weight:700; margin-bottom:0px;'>⟳ Countercurrent</h2>", unsafe_allow_html=True)
+st.sidebar.markdown(f"Active user: <span style='color:#6366f1; font-weight:600;'>{st.session_state.username.capitalize()}</span>", unsafe_allow_html=True)
 st.sidebar.markdown("---")
 
 st.sidebar.subheader("📁 Ongoing Projects")
-# 🌟 Heinz Soup adicionada como o primeiro cliente na navegação
 project_options = ["Master Dashboard", "Heinz Soup", "Haypp", "Likepost", "Sallve", "Oceano Azul", "Pinterest"]
 selected_project = st.sidebar.selectbox("Select Research Desk:", project_options)
 
@@ -154,29 +216,28 @@ if st.sidebar.button("Update Engine Logic", use_container_width=True):
     st.rerun()
 
 st.sidebar.markdown("---")
-if st.sidebar.button("Logout", use_container_width=True):
+if st.sidebar.button("Logout Station", use_container_width=True):
     st.session_state.logged_in = False
     st.rerun()
 
 # ==========================================
 # 4. ÁREA PRINCIPAL
 # ==========================================
-st.title(f"{selected_project}")
+st.markdown(f"<h1 style='font-weight:700; letter-spacing:-1px;'>{selected_project}</h1>", unsafe_allow_html=True)
 
 project_vault = load_from_vault()
 
 if selected_project == "Master Dashboard":
-    col_left, col_right = st.columns([1, 1])
+    col_left, col_right = st.columns([1.1, 0.9])
     
     with col_left:
-        st.subheader("🌐 Master Currents Feed")
+        st.markdown("<h3 style='font-weight:600; font-size:18px; color:#f1f5f9;'>🌐 Master Currents Feed</h3>", unsafe_allow_html=True)
         
         # FILTROS LADO A LADO
         col_f1, col_f2 = st.columns([1, 1])
         with col_f1:
             source_filter = st.multiselect("Filter Source:", options=["All Networks", "TikTok", "Reddit", "Pinterest", "BlueSky", "Twitter/X"], default=["All Networks"])
         with col_f2:
-            # 🌟 Heinz soup incluída no filtro de clientes alalvo
             client_filter = st.multiselect("Filter Target Client:", options=["All Clients", "Heinz_soup", "Ny_liberty", "Haypp", "Likepost", "Sallve", "Oceano_azul", "Pinterest"], default=["All Clients"])
 
         category_filter = st.multiselect(
@@ -210,31 +271,30 @@ if selected_project == "Master Dashboard":
 
         st.caption(f"Showing {len(filtered_signals)} deep signals from database based on combined parameters.")
 
-        with st.container(height=550):
+        with st.container(height=580):
             for i, sig in enumerate(filtered_signals):
                 ai_category = get_ai_category(sig.get("title", ""), sig.get("content", ""))
                 client_display = sig.get("client_tag", "General").replace("_", " ").capitalize()
                 
                 with st.container(border=True):
-                    st.markdown(f"📱 **{sig.get('source')}** | 🏢 *Client: {client_display}*")
+                    st.markdown(f"<span style='color:#94a3b8; font-size:12px;'>📱 <b>{sig.get('source')}</b> | 🏢 Client: <i>{client_display}</i></span>", unsafe_allow_html=True)
                     
+                    # Tags em gradiente injetadas por HTML
                     tag_html = get_tag_html(ai_category)
                     st.markdown(tag_html, unsafe_allow_html=True)
-                    st.write("")
                     
-                    st.markdown(f"**{sig.get('title')}**")
-                    st.write(sig.get('content'))
+                    st.markdown(f"<h4 style='margin-top:0px; font-weight:600; font-size:16px; color:#f8fafc;'>{sig.get('title')}</h4>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='color:#cbd5e1; font-size:14px; line-height:1.5;'>{sig.get('content')}</p>", unsafe_allow_html=True)
                     
                     source_url = sig.get("url", "#")
-                    st.markdown(f"[View Live Source]({source_url})")
+                    st.markdown(f"<a href='{source_url}' target='_blank' style='color:#818cf8; font-size:13px; font-weight:500; text-decoration:none;'>→ Open Source Link</a>", unsafe_allow_html=True)
+                    st.write("")
                     
-                    col_btn1, col_btn2 = st.columns([1, 1])
+                    col_btn1, col_btn2 = st.columns([1.2, 0.8])
                     with col_btn1:
-                        # 🌟 Adicionada Heinz Soup na seleção de envio rápido por card
-                        target_project = st.selectbox("Send to project:", ["Heinz Soup", "Haypp", "Likepost", "Sallve", "Oceano Azul", "Pinterest"], key=f"sel_{i}")
+                        target_project = st.selectbox("Assign Project Desk:", ["Heinz Soup", "Haypp", "Likepost", "Sallve", "Oceano Azul", "Pinterest"], key=f"sel_{i}", label_visibility="collapsed")
                     with col_btn2:
-                        st.write("")
-                        if st.button("📌 Add to Desk", key=f"btn_{i}"):
+                        if st.button("📌 Add to Desk", key=f"btn_{i}", use_container_width=True):
                             new_item = {
                                 "category": f"{sig.get('source')} - {ai_category}",
                                 "title": f"{sig.get('title')} \n\n {sig.get('content')}",
@@ -247,31 +307,28 @@ if selected_project == "Master Dashboard":
                             st.toast(f"Saved permanently to {target_project}!")
 
     with col_right:
-        st.subheader("🧠 Strategic Intelligence")
+        st.markdown("<h3 style='font-weight:600; font-size:18px; color:#f1f5f9;'>🧠 Strategic Intelligence Matrix</h3>", unsafe_allow_html=True)
         with st.container(border=True):
-            st.markdown("### 3 Cultural Shifts Identified")
-            st.write("1. Shift from performance to pure aesthetics in lifestyle wear.")
-            st.write("2. Demand for hyper-clandestine brand experiences.")
-            st.write("3. Fragmentation of mainstream sports networks.")
-            st.markdown("### 3 Countercurrent Provocations")
-            st.write("1. Building 'Ugly Performance' gear to break the luxury aesthetic mold.")
-            st.write("2. Ghost brands: Zero social media presence, maximum impact.")
-            st.write("3. The 'Slow Sports' movement: Rewarding loyalty over fast consumption.")
+            st.markdown("<h5 style='color:#818cf8; font-weight:600;'>⚡ 3 Cultural Shifts Identified</h5>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size:14px; color:#e2e8f0;'>1. Shift from performance to pure aesthetics in lifestyle wear.<br>2. Demand for hyper-clandestine brand experiences.<br>3. Fragmentation of mainstream sports networks.</p>", unsafe_allow_html=True)
+            st.write("")
+            st.markdown("<h5 style='color:#f43f5e; font-weight:600;'>🎯 3 Countercurrent Provocations</h5>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size:14px; color:#e2e8f0;'>1. Building 'Ugly Performance' gear to break the luxury aesthetic mold.<br>2. Ghost brands: Zero social media presence, maximum impact.<br>3. The 'Slow Sports' movement: Rewarding loyalty over fast consumption.</p>", unsafe_allow_html=True)
 
-        st.markdown("---")
-        st.subheader("🛠️ Interactive Modules")
-        tab1, tab2, tab3 = st.tabs(["⚡ Dispatch", "🤝 Thinker Partner", "📊 Meta-Analysis"])
+        st.write("")
+        st.markdown("<h3 style='font-weight:600; font-size:18px; color:#f1f5f9;'>🛠️ Real-time Processing Labs</h3>", unsafe_allow_html=True)
+        tab1, tab2, tab3 = st.tabs(["⚡ AI Dispatch", "🤝 Thinker Partner", "📊 Meta-Analysis"])
         with tab1:
-            dispatch_query = st.text_input("Ask Dispatch for a brief:", placeholder="e.g., WNBA x Luxury Strategy for NY Liberty")
-            if st.button("Generate Brief"):
-                st.write("**[Dispatch Output]:** Simulated strategic brief for: " + dispatch_query)
+            dispatch_query = st.text_input("Ask Dispatch for an instant brief:", placeholder="e.g., WNBA x Luxury Strategy for NY Liberty")
+            if st.button("Generate Strategic Framework"):
+                st.info("**[Dispatch Output]:** Simulated strategic brief for: " + dispatch_query)
 
 # PÁGINAS DOS PROJETOS
 else:
     with st.container(border=True):
-        st.markdown("### 📋 The Brief")
-        current_brief = st.text_area("Project Objectives:", value=st.session_state.project_briefs[selected_project], key="brief_area")
-        if st.button("Update Project Brief"):
+        st.markdown("<h4 style='font-weight:600; color:#f1f5f9;'>📋 Project Workspace Brief</h4>", unsafe_allow_html=True)
+        current_brief = st.text_area("Project Objectives:", value=st.session_state.project_briefs[selected_project], key="brief_area", label_visibility="collapsed")
+        if st.button("Lock Strategic Brief"):
             st.session_state.project_briefs[selected_project] = current_brief
             st.toast("Brief updated!")
 
@@ -279,29 +336,29 @@ else:
     col_proj_left, col_proj_right = st.columns([1, 1])
     
     with col_proj_left:
-        st.markdown("### 🗂️ Research Desk (Collected Data)")
+        st.markdown("<h4 style='font-weight:600; color:#f1f5f9;'>🗂️ Research Desk (Curation Vault)</h4>", unsafe_allow_html=True)
         saved_items = project_vault[selected_project]
         
-        if len(saved_items) == 0: st.info("No data collected yet.")
+        if len(saved_items) == 0: st.info("This desk is currently clean. Add signals from the Master Feed.")
         else:
             for item in saved_items:
                 with st.container(border=True):
-                    st.markdown(f"**[{item['category']}]** — *Curated by {item['saved_by'].capitalize()}*")
-                    st.write(item['title'])
-                    st.markdown(f"[🔗 View Original Live Source]({item['link']})")
+                    st.markdown(f"<span style='color:#818cf8; font-size:12px;'><b>[{item['category']}]</b> — Curated by {item['saved_by'].capitalize()}</span>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='color:#e2e8f0; font-size:14px; margin-top:8px;'>{item['title']}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<a href='{item['link']}' target='_blank' style='color:#94a3b8; font-size:13px; text-decoration:none;'>🔗 View Source</a>", unsafe_allow_html=True)
 
     with col_proj_right:
-        st.markdown("### 🎯 Currents Summary & Whitespaces")
-        if st.button(f"🔮 Run AI Synthesis for {selected_project}", use_container_width=True):
-            if len(saved_items) == 0: st.warning("Research Desk is empty.")
+        st.markdown("<h4 style='font-weight:600; color:#f1f5f9;'>🔮 AI Synthesis Lab</h4>", unsafe_allow_html=True)
+        if st.button(f"Execute Engine Intelligence for {selected_project}", use_container_width=True):
+            if len(saved_items) == 0: st.warning("Add elements to the desk first to perform analytical cross-referencing.")
             else:
                 with st.spinner("Analyzing team curation..."):
-                    st.markdown("#### 🔍 Identified Whitespace")
-                    st.info(f"Based on the {len(saved_items)} permanent signals saved for {selected_project}, there is an unexploited gap in subverting traditional category codes.")
+                    st.markdown("<h5 style='color:#34d399; font-weight:600;'>🔍 Unexploited Whitespace</h5>", unsafe_allow_html=True)
+                    st.info(f"Based on the {len(saved_items)} permanent signals saved for {selected_project}, there is a structural gap in subverting traditional category codes by leveraging human fatigue observed in active threads.")
 
 # AUDIT LOG
 st.markdown("---")
-with st.expander("📄 View Team Activity History (Audit Log)"):
+with st.expander("📄 System Governance & Audit Log"):
     try:
         with open("activity_log.jsonl", "r", encoding="utf-8") as f:
             for line in reversed(f.readlines()):
