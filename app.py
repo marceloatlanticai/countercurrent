@@ -389,7 +389,7 @@ else:
                         """
                         
                         # Chamada oficial do modelo do Gemini
-                        model = genai.GenerativeModel("gemini-1.5-flash")
+                        model = genai.GenerativeModel("gemini-1.5-pro")
                         response = model.generate_content(master_prompt)
                         
                         log_activity(st.session_state.username, "execute_ai_synthesis", f"Generated live Gemini report for {selected_project}")
