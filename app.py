@@ -22,7 +22,7 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
     
-    /* Customização dos Cards do Feed (Efeito Neumórfico Escuro) */
+    /* Customização dos Cards do Feed */
     div[data-testid="stCard"], .st-emotion-cache-1r6slb0, .st-emotion-cache-6q9sum {
         background-color: #1e2025 !important;
         border: 1px solid #2d3139 !important;
@@ -38,7 +38,7 @@ st.markdown("""
         transform: translateY(-2px);
     }
 
-    /* Estilização dos Rounded Rectangles (Tags de Categoria) */
+    /* Estilização das Tags de Categoria */
     .tag {
         display: inline-block;
         padding: 6px 14px;
@@ -84,7 +84,7 @@ st.markdown("""
         color: #e2e8f0 !important;
     }
     
-    /* Scrollbars mais finas e elegantes */
+    /* Scrollbars elegantes */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #0f1115; }
     ::-webkit-scrollbar-thumb { background: #2d3139; border-radius: 10px; }
@@ -109,7 +109,7 @@ if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "username" not in st.session_state: st.session_state.username = None
 if "custom_prompt_rules" not in st.session_state: st.session_state.custom_prompt_rules = ""
 
-# 📁 FUNÇÕES PARA MEMÓRIA PERMANENTE DOS PROJETOS (Cofre de Dados)
+# 📁 FUNÇÕES PARA MEMÓRIA PERMANENTE DOS PROJETOS
 VAULT_PATH = "data/project_vault.jsonl"
 
 def save_to_vault(project, item):
@@ -140,7 +140,6 @@ if "project_briefs" not in st.session_state:
         "Pinterest": "Understand the shift toward chaotic curations, 'Anti-Athleisure' trends, and private digital mood boards as a brand ecosystem strategy."
     }
 
-# MOTOR DE CATEGORIZAÇÃO INTELIGENTE (Simulado para o Feed de Entrada)
 def get_ai_category(title, content):
     text = (title + " " + content).lower()
     rules = st.session_state.custom_prompt_rules.lower()
@@ -150,7 +149,6 @@ def get_ai_category(title, content):
     elif "barrier" in text or "fatigue" in text or "rejecting" in text or "drop" in text or "sodium" in text or "processed" in text: return "Consumer Barrier Identified"
     else: return "Company Update/Earnings"
 
-# Mapeamento de Classes CSS para as Tags
 def get_tag_html(category):
     if category == "Cultural Tension": return f'<span class="tag tag-tension">{category}</span>'
     elif category == "Competitor Activity": return f'<span class="tag tag-competitor">{category}</span>'
@@ -168,7 +166,7 @@ def load_ingested_signals():
     return list(reversed(signals))
 
 # ==========================================
-# 2. TELA DE LOGIN (Premium Card Style)
+# 2. TELA DE LOGIN
 # ==========================================
 if not st.session_state.logged_in:
     st.write("")
@@ -191,7 +189,7 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==========================================
-# 3. BARRA LATERAL (Clean Sidebar Look)
+# 3. BARRA LATERAL
 # ==========================================
 st.sidebar.markdown("<h2 style='font-weight:700; margin-bottom:0px;'>⟳ Countercurrent</h2>", unsafe_allow_html=True)
 st.sidebar.markdown(f"Active user: <span style='color:#6366f1; font-weight:600;'>{st.session_state.username.capitalize()}</span>", unsafe_allow_html=True)
@@ -215,6 +213,11 @@ if st.sidebar.button("Update Engine Logic", use_container_width=True):
     st.sidebar.success("Engine logic updated!")
     st.rerun()
 
+# 🔐 GAVETA DE EMERGÊNCIA: FALLBACK PARA CASO O STREAMLIT CLOUD IGNORE OS SECRETS
+st.sidebar.markdown("---")
+with st.sidebar.expander("🛠️ Connection Fail-Safe"):
+    manual_key = st.text_input("Manual Gemini Key (Optional):", type="password", placeholder="Paste AIzaSy... here if cloud fails")
+
 st.sidebar.markdown("---")
 if st.sidebar.button("Logout Station", use_container_width=True):
     st.session_state.logged_in = False
@@ -233,7 +236,6 @@ if selected_project == "Master Dashboard":
     with col_left:
         st.markdown("<h3 style='font-weight:600; font-size:18px; color:#f1f5f9;'>🌐 Master Currents Feed</h3>", unsafe_allow_html=True)
         
-        # FILTROS LADO A LADO
         col_f1, col_f2 = st.columns([1, 1])
         with col_f1:
             source_filter = st.multiselect("Filter Source:", options=["All Networks", "TikTok", "Reddit", "Pinterest", "BlueSky", "Twitter/X"], default=["All Networks"])
@@ -353,34 +355,38 @@ else:
             if len(saved_items) == 0: 
                 st.warning("Add elements to the desk first to perform analytical cross-referencing.")
             else:
-                # 🛠️ CAPTURA IMEDIATA DA CHAVE SEM ENTRAVES DE ESCOPO GLOBAL
+                # 🛠️ SISTEMA MULTI-VARREDURA DE SEGURANÇA
                 live_key = ""
-                if "GEMINI_API_KEY" in st.secrets:
+                
+                # Método 1: Verifica se você digitou na gaveta de emergência da barra lateral
+                if manual_key.strip():
+                    live_key = manual_key.strip()
+                # Método 2: Formato Atributo do Streamlit
+                elif hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
                     live_key = st.secrets["GEMINI_API_KEY"]
-                elif os.environ.get("GEMINI_API_KEY"):
-                    live_key = os.environ.get("GEMINI_API_KEY")
-
-                # Se falhar nos dois métodos padrão, tentamos a leitura direta do dicionário interno do Streamlit
-                if not live_key:
+                # Método 3: Formato Dicionário do Streamlit
+                else:
                     try:
                         live_key = st.secrets.get("GEMINI_API_KEY", "")
                     except:
                         pass
+                
+                # Método 4: Variável de ambiente do sistema operacional
+                if not live_key:
+                    live_key = os.environ.get("GEMINI_API_KEY", "")
 
                 if not live_key:
-                    st.error("🚨 GEMINI_API_KEY not detected by Streamlit core. Please re-check your Cloud Secrets panel.")
+                    st.error("🚨 GEMINI_API_KEY not detected by Streamlit core. Please use the 'Connection Fail-Safe' expander on the sidebar to paste it manually.")
                 else:
                     with st.spinner("Gemini Pro is compiling workspace nodes and engineering creative counter-brief..."):
                         try:
-                            # 🧠 Força a configuração da API direto no escopo de execução da ação
+                            # Configura e limpa instâncias antigas injetando a chave na hora do clique
                             genai.configure(api_key=live_key)
                             
-                            # Compila todos os posts salvos em texto puro para a IA ler
                             compiled_posts = ""
                             for idx, item in enumerate(saved_items):
                                 compiled_posts += f"\n--- CURATED POST {idx+1} ---\n{item['title']}\n"
 
-                            # Prompt Avançado de Estratégia Contracorrente
                             master_prompt = f"""
                             You are the strategic brain behind Countercurrent.ai, a vanguard advertising agency intelligence tool.
                             Your job is to cross-reference a client's brief with real social internet signals curated by the team, and find an unpredictable market opportunity.
@@ -398,13 +404,11 @@ else:
                             Keep the tone sharp, executive, and highly strategic. Use clean bullet points or short text paragraphs.
                             """
                             
-                            # Inicialização direta do modelo de produção
                             model = genai.GenerativeModel("gemini-1.5-pro")
                             response = model.generate_content(master_prompt)
                             
                             log_activity(st.session_state.username, "execute_ai_synthesis", f"Generated live Gemini Pro report for {selected_project}")
                             
-                            # Exibição do relatório estratégico gerado ao vivo
                             st.markdown("<h5 style='color:#34d399; font-weight:600;'>⚡ Live Strategic Output (Gemini 1.5 Pro)</h5>", unsafe_allow_html=True)
                             st.write(response.text)
                             
